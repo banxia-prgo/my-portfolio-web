@@ -1,0 +1,37 @@
+baseURL = "https://banxia.xin/"
+locale = "zh-cn"
+title = "半夏 | 个人作品集"
+theme = "PaperMod"
+disableKinds = ['rss']
+
+[params]
+  homeInfoParams = {
+    Title = "👋 Hello，我是半夏",
+    Content = "后端开发 | 项目 | 技术随笔"
+  }
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  hideFooter = false
+
+[menu]
+  [[menu.main]]
+    identifier = "home"
+    name = "首页"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    identifier = "projects"
+    name = "项目"
+    url = "/projects/"
+    weight = 2
+  [[menu.main]]
+    identifier = "resume"
+    name = "简历"
+    url = "/resume/"
+    weight = 3
+  [[menu.main]]
+    identifier = "posts"
+    name = "随笔"
+    url = "/posts/"
+    weight = 4
