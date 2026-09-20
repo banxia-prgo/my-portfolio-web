@@ -1,0 +1,2 @@
+{{- $tocScript := resources.Get "js/toc-active.js" | minify | fingerprint -}}
+<script src="{{ $tocScript.RelPermalink }}" integrity="{{ $tocScript.Data.Integrity }}" crossorigin="anonymous" defer></script>
