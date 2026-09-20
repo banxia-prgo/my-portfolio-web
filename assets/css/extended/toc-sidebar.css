@@ -1,0 +1,80 @@
+/* Article table of contents: desktop left sidebar, mobile inline block */
+.post-single {
+  position: relative;
+}
+
+.post-single .toc {
+  position: fixed;
+  top: 7.5rem;
+  left: max(1rem, calc((100vw - 1500px) / 2));
+  width: 220px;
+  max-height: calc(100vh - 10rem);
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--entry);
+  box-shadow: 0 12px 36px rgba(80, 70, 120, .08);
+  scrollbar-width: thin;
+}
+
+.post-single .toc details {
+  margin: 0;
+}
+
+.post-single .toc summary {
+  color: var(--primary);
+  font-size: .9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.post-single .toc .inner {
+  margin-top: .8rem;
+}
+
+.post-single .toc ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.post-single .toc li {
+  margin: .35rem 0;
+  color: var(--secondary);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.post-single .toc a {
+  color: var(--secondary);
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.post-single .toc a:hover {
+  color: var(--banxia-accent, var(--primary));
+}
+
+.post-single .toc a:focus-visible {
+  outline: 2px solid var(--banxia-accent, var(--primary));
+  outline-offset: 3px;
+}
+
+@media (min-width: 901px) and (max-width: 1450px) {
+  .post-single .toc {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin: 0 0 2rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .post-single .toc {
+    position: static;
+    width: auto;
+    max-height: none;
+    margin: 0 0 2rem;
+    padding: .9rem 1rem;
+  }
+}
