@@ -1,0 +1,49 @@
+{{- with site.Params.homeInfoParams }}
+<article class="first-entry home-info banxia-hero">
+    <div class="banxia-hero__glow banxia-hero__glow--one" aria-hidden="true"></div>
+    <div class="banxia-hero__glow banxia-hero__glow--two" aria-hidden="true"></div>
+
+    <div class="banxia-hero__eyebrow">
+        <span class="banxia-status-dot" aria-hidden="true"></span>
+        <span>Backend developer · Builder · Learner</span>
+    </div>
+
+    <header class="entry-header">
+        <h1>{{ .Title | markdownify }}</h1>
+    </header>
+
+    <div class="entry-content">
+        <p class="banxia-hero__lead">{{ .Content | markdownify }}</p>
+        <p class="banxia-hero__description">用代码解决实际问题，把项目经验整理成可复用的知识，也持续记录自己的成长轨迹。</p>
+    </div>
+
+    <div class="banxia-hero__actions">
+        <a class="banxia-button banxia-button--primary" href="{{ "projects/" | relURL }}">探索我的项目 <span aria-hidden="true">↗</span></a>
+        <a class="banxia-button banxia-button--ghost" href="{{ "posts/" | relURL }}">阅读技术随笔 <span aria-hidden="true">→</span></a>
+    </div>
+
+    <div class="banxia-hero__meta" aria-label="个人方向">
+        <span>Java / Backend</span>
+        <span>·</span>
+        <span>持续构建中</span>
+    </div>
+</article>
+
+<section class="banxia-home-links" aria-label="快速入口">
+    <a class="banxia-home-link" href="{{ "projects/" | relURL }}">
+        <span class="banxia-home-link__number">01</span>
+        <span class="banxia-home-link__body"><strong>Projects</strong><small>正在构建的项目与实践</small></span>
+        <span class="banxia-home-link__arrow" aria-hidden="true">↗</span>
+    </a>
+    <a class="banxia-home-link" href="{{ "posts/" | relURL }}">
+        <span class="banxia-home-link__number">02</span>
+        <span class="banxia-home-link__body"><strong>Notes</strong><small>技术学习与问题记录</small></span>
+        <span class="banxia-home-link__arrow" aria-hidden="true">↗</span>
+    </a>
+    <a class="banxia-home-link" href="{{ "resume/" | relURL }}">
+        <span class="banxia-home-link__number">03</span>
+        <span class="banxia-home-link__body"><strong>Resume</strong><small>了解我的经历与技能</small></span>
+        <span class="banxia-home-link__arrow" aria-hidden="true">↗</span>
+    </a>
+</section>
+{{- end -}}
