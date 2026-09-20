@@ -1,49 +1,66 @@
 {{- with site.Params.homeInfoParams }}
-<article class="first-entry home-info banxia-hero">
-    <div class="banxia-hero__glow banxia-hero__glow--one" aria-hidden="true"></div>
-    <div class="banxia-hero__glow banxia-hero__glow--two" aria-hidden="true"></div>
-
-    <div class="banxia-hero__eyebrow">
-        <span class="banxia-status-dot" aria-hidden="true"></span>
-        <span>Backend developer · Builder · Learner</span>
+<section class="banxia-editorial-hero" aria-labelledby="banxia-home-title">
+    <div class="banxia-editorial-hero__copy">
+        <p class="banxia-kicker">Independent developer · Issue 01</p>
+        <header class="entry-header">
+            <h1 id="banxia-home-title">{{ .Title | markdownify }}</h1>
+        </header>
+        <div class="banxia-editorial-hero__lead">{{ .Content | markdownify }}</div>
+        <p class="banxia-editorial-hero__description">用代码解决实际问题，把项目经验整理成可复用的知识，也持续记录自己的成长轨迹。</p>
+        <div class="banxia-editorial-hero__actions">
+            <a class="banxia-button banxia-button--primary" href="{{ "projects/" | relURL }}">查看项目 <span aria-hidden="true">↗</span></a>
+            <a class="banxia-button banxia-button--ghost" href="{{ "posts/" | relURL }}">阅读随笔 <span aria-hidden="true">→</span></a>
+        </div>
     </div>
-
-    <header class="entry-header">
-        <h1>{{ .Title | markdownify }}</h1>
-    </header>
-
-    <div class="entry-content">
-        <p class="banxia-hero__lead">{{ .Content | markdownify }}</p>
-        <p class="banxia-hero__description">用代码解决实际问题，把项目经验整理成可复用的知识，也持续记录自己的成长轨迹。</p>
-    </div>
-
-    <div class="banxia-hero__actions">
-        <a class="banxia-button banxia-button--primary" href="{{ "projects/" | relURL }}">探索我的项目 <span aria-hidden="true">↗</span></a>
-        <a class="banxia-button banxia-button--ghost" href="{{ "posts/" | relURL }}">阅读技术随笔 <span aria-hidden="true">→</span></a>
-    </div>
-
-    <div class="banxia-hero__meta" aria-label="个人方向">
-        <span>Java / Backend</span>
-        <span>·</span>
-        <span>持续构建中</span>
-    </div>
-</article>
-
-<section class="banxia-home-links" aria-label="快速入口">
-    <a class="banxia-home-link" href="{{ "projects/" | relURL }}">
-        <span class="banxia-home-link__number">01</span>
-        <span class="banxia-home-link__body"><strong>Projects</strong><small>正在构建的项目与实践</small></span>
-        <span class="banxia-home-link__arrow" aria-hidden="true">↗</span>
-    </a>
-    <a class="banxia-home-link" href="{{ "posts/" | relURL }}">
-        <span class="banxia-home-link__number">02</span>
-        <span class="banxia-home-link__body"><strong>Notes</strong><small>技术学习与问题记录</small></span>
-        <span class="banxia-home-link__arrow" aria-hidden="true">↗</span>
-    </a>
-    <a class="banxia-home-link" href="{{ "resume/" | relURL }}">
-        <span class="banxia-home-link__number">03</span>
-        <span class="banxia-home-link__body"><strong>Resume</strong><small>了解我的经历与技能</small></span>
-        <span class="banxia-home-link__arrow" aria-hidden="true">↗</span>
-    </a>
+    <aside class="banxia-editorial-hero__aside" aria-label="个人简介">
+        <span class="banxia-editorial-hero__index">01 / PROFILE</span>
+        <p>Backend developer<br>Builder & learner</p>
+        <span class="banxia-editorial-hero__rule"></span>
+        <small>Projects, notes<br>and continuous practice.</small>
+    </aside>
 </section>
 {{- end -}}
+
+{{- $projects := where site.RegularPages "Section" "projects" -}}
+{{- $posts := where site.RegularPages "Section" "posts" -}}
+<section class="banxia-editorial-section" aria-labelledby="banxia-projects-title">
+    <div class="banxia-section-heading">
+        <div><p class="banxia-kicker">Selected work</p><h2 id="banxia-projects-title">精选项目</h2></div>
+        <a href="{{ "projects/" | relURL }}">全部项目 ↗</a>
+    </div>
+    <div class="banxia-project-grid">
+        {{- range first 3 $projects -}}
+        <a class="banxia-project-card" href="{{ .RelPermalink }}">
+            <span class="banxia-project-card__number">{{ printf "%02d" .Weight }}</span>
+            <div><h3>{{ .Title }}</h3>{{ with .Params.summary }}<p>{{ . }}</p>{{ else }}<p>查看项目详情与实践记录。</p>{{ end }}</div>
+            <span class="banxia-project-card__arrow" aria-hidden="true">↗</span>
+        </a>
+        {{- else -}}
+        <div class="banxia-empty-state">项目内容正在整理中，欢迎稍后回来查看。</div>
+        {{- end -}}
+    </div>
+</section>
+
+<section class="banxia-editorial-section banxia-editorial-section--notes" aria-labelledby="banxia-notes-title">
+    <div class="banxia-section-heading">
+        <div><p class="banxia-kicker">Field notes</p><h2 id="banxia-notes-title">技术随笔</h2></div>
+        <a href="{{ "posts/" | relURL }}">全部随笔 ↗</a>
+    </div>
+    <div class="banxia-notes-list">
+        {{- range first 3 $posts -}}
+        <a class="banxia-note-row" href="{{ .RelPermalink }}">
+            <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006.01.02" }}</time>
+            <span class="banxia-note-row__title">{{ .Title }}</span>
+            <span aria-hidden="true">↗</span>
+        </a>
+        {{- else -}}
+        <div class="banxia-empty-state">随笔内容正在整理中。</div>
+        {{- end -}}
+    </div>
+</section>
+
+<section class="banxia-editorial-footer-cta" aria-label="继续了解半夏">
+    <p class="banxia-kicker">Keep exploring</p>
+    <h2>把想法写下来，<br>把项目做出来。</h2>
+    <a class="banxia-button banxia-button--primary" href="{{ "resume/" | relURL }}">查看简历 ↗</a>
+</section>
