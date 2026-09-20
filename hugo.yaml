@@ -12,6 +12,8 @@ params:
   ShowPostNavLinks: true
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
+  ShowToc: true
+  TocOpen: false
   hideFooter: false
 
 menu:
