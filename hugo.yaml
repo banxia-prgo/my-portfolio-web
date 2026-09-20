@@ -1,6 +1,6 @@
 baseURL: "https://www.banxia.xin/"
 locale: "zh-cn"
-title: "半夏 | 个人作品集"
+title: "半夏拾光"
 theme: "PaperMod"
 disableKinds:
   - rss
