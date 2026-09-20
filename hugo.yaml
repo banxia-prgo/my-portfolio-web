@@ -7,7 +7,7 @@ disableKinds:
 
 params:
   homeInfoParams:
-    Title: "👋 Hello，我是半夏"
+    Title: "👋 Hello 我是半夏"
     Content: "代码与思绪的栖居之所"
   ShowPostNavLinks: true
   ShowBreadCrumbs: true
