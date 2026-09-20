@@ -47,6 +47,7 @@ body { background:radial-gradient(circle at 90% 8%,color-mix(in srgb,var(--banxi
 .post-entry:hover { transform:translateY(-4px); border-color:var(--banxia-accent); box-shadow:var(--banxia-shadow); }
 .post-tags a,.terms-tags a { border-radius:999px; }
 .post-content pre { border:1px solid var(--border); border-radius:14px; }
+.banxia-button:focus-visible,.banxia-project-card:focus-visible,.banxia-note-row:focus-visible,.banxia-section-heading a:focus-visible { outline:3px solid var(--banxia-accent); outline-offset:5px; }
 @media (max-width:800px) { .banxia-editorial-hero { grid-template-columns:1fr; gap:2.5rem; padding-top:3rem; } .banxia-editorial-hero__aside { max-width:260px; } .banxia-project-grid { grid-template-columns:1fr; } }
 @media (max-width:600px) { .banxia-section-heading { align-items:start; flex-direction:column; } .banxia-note-row { grid-template-columns:1fr auto; gap:.35rem .75rem; } .banxia-note-row time { grid-column:1/-1; } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; scroll-behavior:auto!important; } }
