@@ -56,17 +56,31 @@
   font-size: .78rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
+  border-radius: 6px;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 .post-single .toc a {
+  display: block;
   color: var(--secondary);
   text-decoration: none;
   overflow-wrap: anywhere;
-  transition: color 180ms ease;
+  border-left: 3px solid transparent;
+  padding: .2rem .45rem;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
 }
 
 .post-single .toc a:hover {
   color: var(--banxia-accent, var(--primary));
+  background: var(--code-bg);
+}
+
+.post-single .toc a.toc-active,
+.post-single .toc li.toc-active-item > a {
+  color: var(--primary);
+  font-weight: 800;
+  background: var(--code-bg);
+  border-left-color: var(--banxia-accent, var(--primary));
 }
 
 .post-single .toc a:focus-visible {
