@@ -33,6 +33,8 @@
 
 {{- $projects := where site.RegularPages "Section" "projects" -}}
 {{- $posts := where site.RegularPages "Section" "posts" -}}
+{{- $projectCount := len $projects -}}
+{{- $postCount := len $posts -}}
 <section class="banxia-portal-layout" aria-label="个人主页内容">
     <aside class="banxia-profile-panel">
         <div class="banxia-profile-panel__eyebrow">01 / PROFILE</div>
@@ -49,6 +51,36 @@
     </aside>
 
     <div class="banxia-portal-main">
+        <section class="banxia-portal-stats" aria-label="内容概览">
+            <div class="banxia-portal-stat"><strong>{{ $projectCount }}</strong><span>Projects<br>项目作品</span></div>
+            <div class="banxia-portal-stat"><strong>{{ $postCount }}</strong><span>Notes<br>技术随笔</span></div>
+            <div class="banxia-portal-stat"><strong>∞</strong><span>Curiosity<br>持续探索</span></div>
+        </section>
+
+        <section class="banxia-portal-section banxia-portal-section--focus" aria-labelledby="banxia-focus-title">
+            <div class="banxia-portal-section__heading">
+                <div><p class="banxia-kicker">What I focus on</p><h2 id="banxia-focus-title">正在关注</h2></div>
+                <span class="banxia-portal-section__index">02 / FOCUS</span>
+            </div>
+            <div class="banxia-focus-grid">
+                <article class="banxia-focus-card"><span>01</span><h3>后端开发</h3><p>从接口设计、业务逻辑到数据处理，持续建立扎实的工程基础。</p><div class="banxia-focus-card__line"></div></article>
+                <article class="banxia-focus-card"><span>02</span><h3>项目实践</h3><p>通过真实的小项目练习，把抽象知识转化为可运行、可维护的成果。</p><div class="banxia-focus-card__line"></div></article>
+                <article class="banxia-focus-card"><span>03</span><h3>知识整理</h3><p>记录遇到的问题、解决思路与复盘过程，让每次实践都留下痕迹。</p><div class="banxia-focus-card__line"></div></article>
+            </div>
+        </section>
+
+        <section class="banxia-portal-section banxia-portal-section--stack" aria-labelledby="banxia-stack-title">
+            <div class="banxia-portal-section__heading">
+                <div><p class="banxia-kicker">Tools & technologies</p><h2 id="banxia-stack-title">技术工具箱</h2></div>
+                <span class="banxia-portal-section__index">03 / STACK</span>
+            </div>
+            <div class="banxia-stack-panel">
+                <div class="banxia-stack-row"><span>Languages</span><div><b>C / C++</b><b>Python</b><b>JavaScript</b></div></div>
+                <div class="banxia-stack-row"><span>Development</span><div><b>Git</b><b>CMake</b><b>Linux</b><b>VS Code</b></div></div>
+                <div class="banxia-stack-row"><span>Learning</span><div><b>Backend</b><b>Algorithms</b><b>Problem Solving</b></div></div>
+            </div>
+        </section>
+
         <section class="banxia-portal-section" aria-labelledby="banxia-projects-title">
             <div class="banxia-portal-section__heading">
                 <div><p class="banxia-kicker">Selected work</p><h2 id="banxia-projects-title">精选项目</h2></div>
@@ -76,7 +108,7 @@
                 <a href="{{ "posts/" | relURL }}">全部随笔 ↗</a>
             </div>
             <div class="banxia-portal-notes-list">
-                {{- range first 3 $posts -}}
+                {{- range first 4 $posts -}}
                 <a class="banxia-portal-note-row" href="{{ .RelPermalink }}">
                     <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006.01.02" }}</time>
                     <span class="banxia-portal-note-row__title">{{ .Title }}</span>
@@ -88,9 +120,44 @@
             </div>
         </section>
 
+        <section class="banxia-portal-section banxia-portal-section--principles" aria-labelledby="banxia-principles-title">
+            <div class="banxia-portal-section__heading">
+                <div><p class="banxia-kicker">A small working philosophy</p><h2 id="banxia-principles-title">我的做事方式</h2></div>
+                <span class="banxia-portal-section__index">04 / NOTES</span>
+            </div>
+            <div class="banxia-principles-grid">
+                <article><span>01</span><h3>先做出来</h3><p>先让想法拥有一个可以运行的版本，再通过反馈逐步改进。</p></article>
+                <article><span>02</span><h3>持续拆解</h3><p>把复杂问题拆成小步骤，理解每一层为什么存在、如何协作。</p></article>
+                <article><span>03</span><h3>留下记录</h3><p>把踩过的坑、验证过的方案和新的疑问整理成下一次的起点。</p></article>
+            </div>
+        </section>
+
         <section class="banxia-portal-cta" aria-label="继续了解半夏">
             <div><p class="banxia-kicker">Keep exploring</p><h2>把想法写下来，<br>把项目做出来。</h2></div>
             <a class="banxia-portal-button banxia-portal-button--dark" href="{{ "resume/" | relURL }}">查看简历 ↗</a>
         </section>
     </div>
 </section>
+
+<style>
+.banxia-portal-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; margin-bottom:5rem; border:1px solid var(--border); background:var(--border); }
+.banxia-portal-stat { display:flex; align-items:end; justify-content:space-between; gap:.75rem; padding:1.35rem; background:var(--entry); }
+.banxia-portal-stat strong { color:var(--banxia-accent); font-size:clamp(2rem,5vw,3.8rem); line-height:1; letter-spacing:-.08em; }
+.banxia-portal-stat span { color:var(--secondary); font-size:.68rem; font-weight:750; line-height:1.5; text-align:right; }
+.banxia-portal-section__index { color:var(--secondary); font-size:.68rem; font-weight:800; letter-spacing:.1em; }
+.banxia-focus-grid,.banxia-principles-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; }
+.banxia-focus-card,.banxia-principles-grid article { padding:1.35rem; border:1px solid var(--border); border-radius:var(--banxia-radius); background:var(--entry); }
+.banxia-focus-card>span,.banxia-principles-grid article>span { color:var(--banxia-accent); font-size:.7rem; font-weight:850; }
+.banxia-focus-card h3,.banxia-principles-grid h3 { margin:2.5rem 0 .7rem; font-size:1.25rem; letter-spacing:-.04em; }
+.banxia-focus-card p,.banxia-principles-grid p { margin:0; color:var(--secondary); font-size:.82rem; line-height:1.8; }
+.banxia-focus-card__line { width:42px; height:3px; margin-top:2rem; border-radius:99px; background:linear-gradient(90deg,var(--banxia-accent),var(--banxia-accent-2)); }
+.banxia-stack-panel { border-top:1px solid var(--border); }
+.banxia-stack-row { display:grid; grid-template-columns:130px minmax(0,1fr); gap:1rem; padding:1.15rem 0; border-bottom:1px solid var(--border); }
+.banxia-stack-row>span { color:var(--secondary); font-size:.75rem; font-weight:750; }
+.banxia-stack-row>div { display:flex; flex-wrap:wrap; gap:.5rem; }
+.banxia-stack-row b { padding:.42rem .7rem; border:1px solid var(--border); border-radius:999px; color:var(--primary); font-size:.72rem; font-weight:700; background:var(--entry); }
+.banxia-principles-grid article { border-radius:0; }
+.banxia-principles-grid h3 { margin-top:2rem; }
+@media (max-width:900px) { .banxia-focus-grid,.banxia-principles-grid { grid-template-columns:1fr; } }
+@media (max-width:600px) { .banxia-portal-stats { grid-template-columns:1fr; } .banxia-portal-stat { align-items:center; } .banxia-stack-row { grid-template-columns:1fr; gap:.65rem; } }
+</style>
