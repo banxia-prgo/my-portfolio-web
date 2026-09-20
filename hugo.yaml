@@ -1,6 +1,6 @@
 baseURL: "https://www.banxia.xin/"
 locale: "zh-cn"
-title: "半夏拾光"
+title: "半夏小筑"
 theme: "PaperMod"
 disableKinds:
   - rss
@@ -8,7 +8,7 @@ disableKinds:
 params:
   homeInfoParams:
     Title: "👋 Hello，我是半夏"
-    Content: "后端开发 | 项目 | 技术随笔"
+    Content: "代码与思绪的栖居之所"
   ShowPostNavLinks: true
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
