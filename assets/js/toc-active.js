@@ -14,12 +14,82 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!headings.length) return;
 
+  const desktopQuery = window.matchMedia('(min-width: 1451px)');
+  const root = document.documentElement;
+  const minWidth = 180;
+  const maxWidth = 380;
+  const gap = 40;
+
+  const ensureResizeHandle = () => {
+    if (!desktopQuery.matches || toc.querySelector('.toc-resize-handle')) return;
+
+    const handle = document.createElement('span');
+    handle.className = 'toc-resize-handle';
+    handle.setAttribute('role', 'separator');
+    handle.setAttribute('aria-label', '调整目录宽度');
+    handle.setAttribute('aria-orientation', 'vertical');
+    handle.tabIndex = 0;
+    toc.appendChild(handle);
+
+    let dragging = false;
+
+    const getLeft = () => toc.getBoundingClientRect().left;
+    const setWidth = (width) => {
+      const nextWidth = Math.max(minWidth, Math.min(maxWidth, width));
+      root.style.setProperty('--toc-sidebar-width', `${nextWidth}px`);
+      root.style.setProperty('--toc-sidebar-gap', `${gap}px`);
+      handle.setAttribute('aria-valuenow', String(Math.round(nextWidth)));
+    };
+
+    const onMove = (event) => {
+      if (!dragging) return;
+      setWidth(event.clientX - getLeft());
+    };
+
+    const stopDragging = () => {
+      dragging = false;
+      handle.classList.remove('is-dragging');
+      document.body.classList.remove('toc-is-resizing');
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', stopDragging);
+    };
+
+    handle.addEventListener('pointerdown', (event) => {
+      if (!desktopQuery.matches) return;
+      dragging = true;
+      handle.classList.add('is-dragging');
+      document.body.classList.add('toc-is-resizing');
+      handle.setPointerCapture?.(event.pointerId);
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', stopDragging, { once: true });
+      event.preventDefault();
+    });
+
+    handle.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      const current = parseFloat(getComputedStyle(root).getPropertyValue('--toc-sidebar-width')) || 220;
+      setWidth(current + (event.key === 'ArrowRight' ? 10 : -10));
+      event.preventDefault();
+    });
+  };
+
   const setActive = (heading) => {
     links.forEach((link) => {
       const id = decodeURIComponent(link.getAttribute('href').slice(1));
       const active = heading && id === heading.id;
       link.classList.toggle('toc-active', active);
-      link.closest('li')?.classList.toggle('toc-active-item', active);
+      const item = link.closest('li');
+      item?.classList.toggle('toc-active-item', active);
+
+      if (active && item) {
+        const tocBox = toc.getBoundingClientRect();
+        const itemBox = item.getBoundingClientRect();
+        const outsideAbove = itemBox.top < tocBox.top;
+        const outsideBelow = itemBox.bottom > tocBox.bottom;
+        if (outsideAbove || outsideBelow) {
+          item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        }
+      }
     });
   };
 
@@ -47,6 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   headings.forEach((heading) => observer.observe(heading));
   setActive(currentHeading);
+  ensureResizeHandle();
+
+  desktopQuery.addEventListener?.('change', () => {
+    if (desktopQuery.matches) ensureResizeHandle();
+  });
 
   links.forEach((link) => {
     link.addEventListener('click', () => {
