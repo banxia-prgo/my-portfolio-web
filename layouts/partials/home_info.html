@@ -29,10 +29,10 @@
         <a href="{{ "projects/" | relURL }}">全部项目 ↗</a>
     </div>
     <div class="banxia-project-grid">
-        {{- range first 3 $projects -}}
-        <a class="banxia-project-card" href="{{ .RelPermalink }}">
-            <span class="banxia-project-card__number">{{ printf "%02d" .Weight }}</span>
-            <div><h3>{{ .Title }}</h3>{{ with .Params.summary }}<p>{{ . }}</p>{{ else }}<p>查看项目详情与实践记录。</p>{{ end }}</div>
+        {{- range $index, $project := first 3 $projects -}}
+        <a class="banxia-project-card" href="{{ $project.RelPermalink }}">
+            <span class="banxia-project-card__number">{{ printf "%02d" (add $index 1) }}</span>
+            <div><h3>{{ $project.Title }}</h3>{{ with $project.Params.summary }}<p>{{ . }}</p>{{ else }}<p>查看项目详情与实践记录。</p>{{ end }}</div>
             <span class="banxia-project-card__arrow" aria-hidden="true">↗</span>
         </a>
         {{- else -}}
