@@ -1,17 +1,22 @@
-/* Use the website favicon artwork as the profile avatar. */
+/* Profile avatar — centered, balanced and crisp at different sizes. */
 .banxia-profile-panel__avatar {
   position: relative;
   display: block;
-  width: 84px;
-  height: 84px;
-  margin: 0 auto 1.25rem;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 1.15rem;
   overflow: hidden;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, .72);
   border-radius: 50%;
-  background: #6f8fb8 url('/favicon.svg') center / cover no-repeat;
+  background-color: #6f8fb8;
+  background-image: url('/favicon.svg');
+  background-repeat: no-repeat;
+  background-position: 46% 50%;
+  background-size: 108% 108%;
   color: transparent;
   font-size: 0;
-  box-shadow: 0 10px 28px rgba(65, 74, 105, .14);
+  box-shadow: 0 8px 22px rgba(65, 74, 105, .13), inset 0 0 0 1px rgba(255, 255, 255, .28);
+  transform: translateX(-1px);
 }
 
 .banxia-profile-panel__avatar::before,
@@ -19,9 +24,16 @@
   content: none;
 }
 
+.banxia-profile-panel h2 {
+  width: 100%;
+  margin-top: 0;
+  text-align: center;
+  letter-spacing: -.06em;
+}
+
 @media (max-width: 900px) {
   .banxia-profile-panel__avatar {
-    width: 76px;
-    height: 76px;
+    width: 84px;
+    height: 84px;
   }
 }
