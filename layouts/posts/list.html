@@ -21,7 +21,7 @@
   <div class="bx-post-grid" id="bx-post-grid">
     {{- range $index, $post := $posts -}}
     {{- $tags := delimit $post.Params.tags " " -}}
-    {{- $searchText := printf "%s %s %s %s" $post.Title $post.Summary $tags $post.Content | plainify | lower -}}
+    {{- $searchText := printf "%s %s %s" $post.Title $post.Summary $tags | plainify | lower -}}
     <article class="bx-post-card" data-search="{{ $searchText | htmlEscape }}" data-tags="{{ $tags | lower | htmlEscape }}" data-title="{{ $post.Title | lower | htmlEscape }}" data-date="{{ $post.Date.Format "2006-01-02" }}">
       <div class="bx-post-card__top"><span class="bx-post-card__number">{{ printf "%02d" (add $index 1) }}</span><time datetime="{{ $post.Date.Format "2006-01-02" }}">{{ $post.Date.Format "2006 年 01 月 02 日" }}</time></div>
       <h2><a href="{{ $post.RelPermalink }}">{{ $post.Title }}</a></h2>
