@@ -1,0 +1,53 @@
+{{- define "main" -}}
+<div class="project-archive">
+    <header class="project-archive__header">
+        <p class="banxia-kicker">PROJECT ARCHIVE / SELECTED WORK</p>
+        <h1>{{ .Title | default "项目作品" }}</h1>
+        {{ with .Description }}<p class="project-archive__intro">{{ . }}</p>{{ end }}
+        <div class="project-archive__meta">
+            <span>{{ len .RegularPages }} 个项目</span>
+            <span>实践 · 记录 · 持续迭代</span>
+        </div>
+    </header>
+
+    <div class="project-archive__grid">
+        {{- range .RegularPages.ByDate.Reverse -}}
+        {{- $project := . -}}
+        {{- $cover := .Resources.GetMatch "cover.*" -}}
+        <article class="project-archive-card{{ if .Params.featured }} project-archive-card--featured{{ end }}">
+            <a class="project-archive-card__media" href="{{ .RelPermalink }}" aria-label="查看项目：{{ .Title }}">
+                {{- with $cover -}}
+                <img src="{{ .RelPermalink }}" alt="{{ $project.Title }} 项目封面" loading="lazy" decoding="async">
+                {{- else -}}
+                <span class="project-archive-card__placeholder" aria-hidden="true">
+                    <span>{{ printf "%02d" (add $.RegularPages.Len 0) }}</span>
+                    <b>{{ $project.Title }}</b>
+                    <i>PROJECT / CASE STUDY</i>
+                </span>
+                {{- end -}}
+                {{- if .Params.featured }}<span class="project-archive-card__featured">精选项目</span>{{ end -}}
+            </a>
+            <div class="project-archive-card__body">
+                <div class="project-archive-card__eyebrow">
+                    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006.01.02" }}</time>
+                    {{ with .Params.categories }}<span>{{ index . 0 }}</span>{{ end }}
+                </div>
+                <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+                {{ with .Params.summary }}<p class="project-archive-card__summary">{{ . }}</p>{{ end }}
+                {{ with .Params.tech }}
+                <div class="banxia-project-tech" aria-label="项目技术栈">
+                    {{- range first 5 . }}<span>{{ . }}</span>{{ end -}}
+                </div>
+                {{ end }}
+                <div class="project-archive-card__links">
+                    <a href="{{ .RelPermalink }}">查看项目详情 <span aria-hidden="true">↗</span></a>
+                    {{ with .Params.github }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>{{ end }}
+                </div>
+            </div>
+        </article>
+        {{- else -}}
+        <div class="banxia-empty-state">项目正在整理中，完成后会在这里更新。</div>
+        {{- end -}}
+    </div>
+</div>
+{{- end -}}
