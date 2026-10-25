@@ -1,0 +1,38 @@
+{{- define "main" -}}
+<section class="bx-post-archive">
+  <header class="bx-archive-header">
+    <p class="banxia-kicker">NOTES / LEARNING JOURNAL</p>
+    <h1>{{ .Title | default "技术随笔" }}</h1>
+    {{ with .Description }}<p class="bx-archive-header__desc">{{ . }}</p>{{ else }}<p class="bx-archive-header__desc">记录编程学习、问题排查与项目实践中的思考，让每一次学习都能成为下一次动手的起点。</p>{{ end }}
+    <div class="bx-archive-header__meta"><span>{{ len .RegularPages }} 篇随笔</span><span>持续记录 · 及时复盘 · 分享总结</span></div>
+  </header>
+  {{- $posts := .RegularPages.ByDate.Reverse -}}
+  {{- $tagSet := slice -}}
+  {{- range $posts -}}{{- range .Params.tags -}}{{- $tagSet = $tagSet | append . -}}{{- end -}}{{- end -}}
+  {{- $uniqueTags := uniq $tagSet | sort -}}
+  <div class="bx-post-tools">
+    <label class="bx-post-search"><span aria-hidden="true">⌕</span><input type="search" id="bx-post-search" placeholder="搜索标题、摘要或标签…" autocomplete="off" aria-label="搜索技术随笔"></label>
+    <label class="bx-post-sort"><span>排序</span><select id="bx-post-sort" aria-label="随笔排序"><option value="newest">最新发布</option><option value="oldest">最早发布</option><option value="title">标题 A–Z</option></select></label>
+  </div>
+  {{- if $uniqueTags -}}
+  <div class="bx-post-tags" aria-label="按标签筛选"><button type="button" class="is-active" data-tag="all">全部</button>{{- range $uniqueTags -}}<button type="button" data-tag="{{ . | lower }}">{{ . }}</button>{{- end -}}</div>
+  {{- end -}}
+  <div class="bx-post-results" aria-live="polite"></div>
+  <div class="bx-post-grid" id="bx-post-grid">
+    {{- range $index, $post := $posts -}}
+    {{- $tags := delimit $post.Params.tags " " -}}
+    {{- $searchText := printf "%s %s %s %s" $post.Title $post.Summary $tags $post.Content | plainify | lower -}}
+    <article class="bx-post-card" data-search="{{ $searchText | htmlEscape }}" data-tags="{{ $tags | lower | htmlEscape }}" data-title="{{ $post.Title | lower | htmlEscape }}" data-date="{{ $post.Date.Format "2006-01-02" }}">
+      <div class="bx-post-card__top"><span class="bx-post-card__number">{{ printf "%02d" (add $index 1) }}</span><time datetime="{{ $post.Date.Format "2006-01-02" }}">{{ $post.Date.Format "2006 年 01 月 02 日" }}</time></div>
+      <h2><a href="{{ $post.RelPermalink }}">{{ $post.Title }}</a></h2>
+      {{ with $post.Params.summary }}<p class="bx-post-card__summary">{{ . }}</p>{{ else }}<p class="bx-post-card__summary">{{ $post.Summary | plainify | htmlUnescape | truncate 150 }}</p>{{ end }}
+      {{ with $post.Params.tags }}<div class="bx-post-card__tags">{{ range first 4 . }}<span>{{ . }}</span>{{ end }}</div>{{ end }}
+      <div class="bx-post-card__footer"><span>{{ with $post.Params.categories }}{{ delimit . " · " }}{{ else }}学习笔记{{ end }}</span><a href="{{ $post.RelPermalink }}">阅读全文 <span aria-hidden="true">↗</span></a></div>
+    </article>
+    {{- else -}}
+    <div class="banxia-empty-state">随笔正在整理中，完成后会在这里更新。</div>
+    {{- end -}}
+  </div>
+  <p class="bx-post-empty" id="bx-post-empty" hidden>没有找到匹配的随笔，试试其他关键词或标签。</p>
+</section>
+{{- end -}}
