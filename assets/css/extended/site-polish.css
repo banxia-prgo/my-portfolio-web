@@ -116,3 +116,7 @@ body.bx-lightbox-open { overflow: hidden; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+.bx-reveal-ready { opacity: 0; transform: translateY(10px); transition: opacity .42s ease, transform .42s ease; }
+.bx-reveal-ready.bx-in-view { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .bx-reveal-ready, .bx-reveal-ready.bx-in-view { opacity: 1; transform: none; } }
