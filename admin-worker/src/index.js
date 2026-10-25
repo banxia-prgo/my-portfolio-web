@@ -79,8 +79,8 @@ async function github(env, token, path, init = {}) {
   if (!res.ok) throw new Error(data.message || `GitHub API error ${res.status}`);
   return data;
 }
-async function putFile(env, token, path, content, message, sha) {
-  const body = { message, content: btoa(unescape(encodeURIComponent(content))), branch: env.GITHUB_BRANCH || "main" };
+async function putFile(env, token, path, content, message, sha, alreadyBase64 = false) {
+  const body = { message, content: alreadyBase64 ? content : btoa(unescape(encodeURIComponent(content))), branch: env.GITHUB_BRANCH || "main" };
   if (sha) body.sha = sha;
   return github(env, token, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path.split("/").map(encodeURIComponent).join("/")}`, { method: "PUT", body: JSON.stringify(body) });
 }
@@ -155,7 +155,10 @@ async function route(request, env) {
     if (!profile.ok || user.login !== env.ALLOWED_GITHUB_LOGIN) return html("<h1>此 GitHub 账号未获准访问。</h1>", 403);
     const id = randomHex(32);
     await env.SESSIONS.put("session:"+id, JSON.stringify({token:tokenData.access_token,login:user.login,expires:Date.now()+SESSION_TTL}), {expirationTtl:SESSION_TTL});
-    return new Response(null,{status:302,headers:{location:"/", "set-cookie":cookie(COOKIE,id+"."+await sign(id,env.SESSION_SECRET),SESSION_TTL),"set-cookie-2":cookie("bx_oauth_state","",0),"cache-control":"no-store"}});
+    const headers = new Headers({location:"/","cache-control":"no-store"});
+    headers.append("set-cookie", cookie(COOKIE,id+"."+await sign(id,env.SESSION_SECRET),SESSION_TTL));
+    headers.append("set-cookie", cookie("bx_oauth_state","",0));
+    return new Response(null,{status:302,headers});
   }
   if (url.pathname.startsWith("/api/")) {
     if (url.pathname === "/api/me" && request.method === "GET") {
@@ -192,9 +195,8 @@ async function route(request, env) {
         if(bytes.length>MAX_IMAGE) return json({error:"图片超过 4 MB"},400);
         const magic = body.type==="image/png" ? bytes[0]===137&&bytes[1]===80 : body.type==="image/jpeg" ? bytes[0]===255&&bytes[1]===216 : body.type==="image/gif" ? bytes[0]===71&&bytes[1]===73&&bytes[2]===70 : body.type==="image/webp" ? String.fromCharCode(...bytes.slice(8,12))==="WEBP" : body.type==="image/svg+xml" ? new TextDecoder().decode(bytes.slice(0,300)).includes("<svg") : false;
         if(!magic) return json({error:"文件内容与图片类型不匹配"},400);
-        const content = new TextDecoder().decode(bytes);
         let sha;try{const old=await github(env,session.token,`/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path}?ref=${encodeURIComponent(env.GITHUB_BRANCH||"main")}`);sha=old.sha}catch(e){if(!String(e.message).includes("Not Found"))throw e;}
-        const result=await putFile(env,session.token,path,content,`content-admin: upload ${body.name}`,sha);
+        const result=await putFile(env,session.token,path,body.data,`content-admin: upload ${body.name}`,sha,true);
         return json({ok:true,path,url:env.SITE_URL+"/uploads/"+encodeURIComponent(body.name),commit:result.commit.html_url});
       }
       return json({error:"接口不存在"},404);
