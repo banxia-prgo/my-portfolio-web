@@ -1,0 +1,42 @@
+{{- define "main" -}}
+{{- $cover := .Resources.GetMatch "cover.*" -}}
+<article class="project-detail">
+    <nav class="project-detail__breadcrumb" aria-label="面包屑导航">
+        <a href="{{ "projects/" | relURL }}">项目作品</a><span aria-hidden="true">/</span><span>{{ .Title }}</span>
+    </nav>
+
+    <header class="project-detail__header">
+        {{ if .Params.featured }}<p class="banxia-kicker">FEATURED PROJECT / 项目实践</p>{{ else }}<p class="banxia-kicker">PROJECT CASE STUDY / 项目实践</p>{{ end }}
+        <h1>{{ .Title }}</h1>
+        {{ with .Params.summary }}<p class="project-detail__summary">{{ . }}</p>{{ end }}
+        <div class="project-detail__meta">
+            <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006 年 01 月 02 日" }}</time>
+            {{ with .Params.categories }}<span>{{ delimit . " · " }}</span>{{ end }}
+        </div>
+        {{ with .Params.tech }}
+        <div class="banxia-project-tech project-detail__tech" aria-label="项目技术栈">
+            {{- range . }}<span>{{ . }}</span>{{ end -}}
+        </div>
+        {{ end }}
+        <div class="project-detail__actions">
+            {{ with .Params.github }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer">查看 GitHub 源码 <span aria-hidden="true">↗</span></a>{{ end }}
+            {{ with .Params.demo }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer">在线演示 <span aria-hidden="true">↗</span></a>{{ end }}
+        </div>
+    </header>
+
+    {{ with $cover }}
+    <figure class="project-detail__cover">
+        <img src="{{ .RelPermalink }}" alt="{{ $.Title }} 项目封面" fetchpriority="high">
+    </figure>
+    {{ end }}
+
+    <div class="project-detail__content post-content">
+        {{ .Content }}
+    </div>
+
+    <footer class="project-detail__footer">
+        <a href="{{ "projects/" | relURL }}">← 返回全部项目</a>
+        {{ with .Params.github }}<a href="{{ . }}" target="_blank" rel="noopener noreferrer">项目源码 ↗</a>{{ end }}
+    </footer>
+</article>
+{{- end -}}
