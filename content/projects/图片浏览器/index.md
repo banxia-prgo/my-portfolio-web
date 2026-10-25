@@ -2,6 +2,10 @@
 date = '2026-09-20T14:00:00+08:00'
 title = '图片浏览器'
 summary = '基于 Qt Widgets / C++ 开发的桌面图片浏览器，支持打开图片或目录、图片浏览、缩放、状态信息查看与另存为。'
+github = 'https://github.com/banxia-prgo/picture_browser'
+tech = ['C++11', 'Qt Widgets', 'Qt Creator']
+featured = true
+weight = 10
 +++
 
 ## 项目简介
