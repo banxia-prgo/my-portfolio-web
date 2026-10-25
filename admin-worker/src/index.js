@@ -35,34 +35,47 @@ function parseCookies(request) {
     const i = s.indexOf("="); return [s.slice(0, i), s.slice(i + 1)];
   }));
 }
+function fromBase64url(value) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(normalized + "=".repeat((4 - normalized.length % 4) % 4)), ch => ch.charCodeAt(0));
+}
+async function sessionKey(secret) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+async function sealSession(data, secret) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await sessionKey(secret);
+  const plain = new TextEncoder().encode(JSON.stringify(data));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plain);
+  return base64url(iv) + "." + base64url(encrypted);
+}
+async function openSession(value, secret) {
+  try {
+    const [ivText, encryptedText] = value.split(".");
+    if (!ivText || !encryptedText) return null;
+    const key = await sessionKey(secret);
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromBase64url(ivText) }, key, fromBase64url(encryptedText));
+    const data = JSON.parse(new TextDecoder().decode(plain));
+    if (!data || typeof data.token !== "string" || typeof data.login !== "string" || !Number.isFinite(data.expires) || data.expires < Date.now()) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
 async function sessionFor(request, env) {
   const value = parseCookies(request)[COOKIE];
-  if (!value) { console.warn("[auth] cookie_missing"); return null; }
-  if (!env.SESSION_SECRET || !env.SESSIONS) {
-    console.warn("[auth] config_missing", { sessionSecret: Boolean(env.SESSION_SECRET), sessions: Boolean(env.SESSIONS) });
+  if (!value) return null;
+  if (!env.SESSION_SECRET) {
+    console.warn("[auth] session_secret_missing");
     return null;
   }
-  const [id, sig] = value.split(".");
-  if (!id || !sig || !(await safeEqual(sig, await sign(id, env.SESSION_SECRET)))) {
-    console.warn("[auth] signature_invalid");
+  const data = await openSession(value, env.SESSION_SECRET);
+  if (!data) {
+    console.warn("[auth] cookie_invalid_or_expired");
     return null;
   }
-
-  // Workers KV is eventually consistent across locations. Retry briefly when a
-  // newly-created session has not reached the serving location yet.
-  let data = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    data = await env.SESSIONS.get("session:" + id, "json");
-    if (data) break;
-    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
-  }
-  if (!data) { console.warn("[auth] session_not_found"); return null; }
-  if (data.expires < Date.now()) {
-    console.warn("[auth] session_expired");
-    await env.SESSIONS.delete("session:" + id);
-    return null;
-  }
-  return { ...data, id };
+  return data;
 }
 function validOrigin(request, env) {
   const origin = request.headers.get("Origin");
@@ -177,10 +190,9 @@ async function route(request, env) {
     const profile = await fetch("https://api.github.com/user", {headers:{authorization:"Bearer "+tokenData.access_token,accept:"application/vnd.github+json","user-agent":"Banxia-Content-Admin"}});
     const user = await profile.json();
     if (!profile.ok || user.login !== env.ALLOWED_GITHUB_LOGIN) return html("<h1>此 GitHub 账号未获准访问。</h1>", 403);
-    const id = randomHex(32);
-    await env.SESSIONS.put("session:"+id, JSON.stringify({token:tokenData.access_token,login:user.login,expires:Date.now()+SESSION_TTL}), {expirationTtl:SESSION_TTL});
+    const sessionCookie = await sealSession({token:tokenData.access_token,login:user.login,expires:Date.now()+SESSION_TTL},env.SESSION_SECRET);
     const headers = new Headers({location:"/","cache-control":"no-store"});
-    headers.append("set-cookie", cookie(COOKIE,id+"."+await sign(id,env.SESSION_SECRET),SESSION_TTL));
+    headers.append("set-cookie", cookie(COOKIE,sessionCookie,SESSION_TTL));
     headers.append("set-cookie", cookie("bx_oauth_state","",0));
     return new Response(null,{status:302,headers});
   }
@@ -189,7 +201,6 @@ async function route(request, env) {
       const s=await sessionFor(request,env); return json(s?{authenticated:true,login:s.login}:{authenticated:false});
     }
     if (url.pathname === "/api/auth/logout" && request.method === "POST") {
-      const s=await sessionFor(request,env); if(s) await env.SESSIONS.delete("session:"+s.id);
       return json({ok:true},200,{"set-cookie":cookie(COOKIE,"",0)});
     }
     const session = await sessionFor(request,env);
