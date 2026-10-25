@@ -52,30 +52,62 @@ async function sealSession(data, secret) {
 }
 async function openSession(value, secret) {
   try {
-    const [ivText, encryptedText] = value.split(".");
-    if (!ivText || !encryptedText) return null;
+    const parts = value.split(".");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      return { error: "cookie_format" };
+    }
+
+    const [ivText, encryptedText] = parts;
+    const iv = fromBase64url(ivText);
+    const encrypted = fromBase64url(encryptedText);
+    if (iv.length !== 12 || encrypted.length < 17) {
+      return { error: "cookie_format" };
+    }
+
     const key = await sessionKey(secret);
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromBase64url(ivText) }, key, fromBase64url(encryptedText));
+    const plain = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encrypted
+    );
     const data = JSON.parse(new TextDecoder().decode(plain));
-    if (!data || typeof data.token !== "string" || typeof data.login !== "string" || !Number.isFinite(data.expires) || data.expires < Date.now()) return null;
-    return data;
-  } catch {
-    return null;
+
+    if (
+      !data ||
+      typeof data.token !== "string" ||
+      typeof data.login !== "string" ||
+      !Number.isFinite(data.expires)
+    ) {
+      return { error: "session_payload" };
+    }
+    if (data.expires < Date.now()) {
+      return { error: "session_expired" };
+    }
+
+    return { data };
+  } catch (e) {
+    // Log only the error class. Never log cookie contents, tokens, or secrets.
+    console.warn("[auth] session_decrypt_failed", e?.name || "unknown");
+    return { error: "session_decrypt_failed" };
   }
 }
 async function sessionFor(request, env) {
   const value = parseCookies(request)[COOKIE];
-  if (!value) return null;
+  if (!value) {
+    console.warn("[auth] cookie_missing");
+    return null;
+  }
   if (!env.SESSION_SECRET) {
     console.warn("[auth] session_secret_missing");
     return null;
   }
-  const data = await openSession(value, env.SESSION_SECRET);
-  if (!data) {
-    console.warn("[auth] cookie_invalid_or_expired");
+
+  const result = await openSession(value, env.SESSION_SECRET);
+  if (result.error) {
+    console.warn("[auth]", result.error);
     return null;
   }
-  return data;
+  return result.data;
 }
 function validOrigin(request, env) {
   const origin = request.headers.get("Origin");
