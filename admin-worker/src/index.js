@@ -222,7 +222,7 @@ async function route(request, env) {
     const profile = await fetch("https://api.github.com/user", {headers:{authorization:"Bearer "+tokenData.access_token,accept:"application/vnd.github+json","user-agent":"Banxia-Content-Admin"}});
     const user = await profile.json();
     if (!profile.ok || user.login !== env.ALLOWED_GITHUB_LOGIN) return html("<h1>此 GitHub 账号未获准访问。</h1>", 403);
-    const sessionCookie = await sealSession({token:tokenData.access_token,login:user.login,expires:Date.now()+SESSION_TTL},env.SESSION_SECRET);
+    const sessionCookie = await sealSession({token:tokenData.access_token,login:user.login,expires:Date.now()+SESSION_TTL*1000},env.SESSION_SECRET);
     const headers = new Headers({location:"/","cache-control":"no-store"});
     headers.append("set-cookie", cookie(COOKIE,sessionCookie,SESSION_TTL));
     headers.append("set-cookie", cookie("bx_oauth_state","",0));
