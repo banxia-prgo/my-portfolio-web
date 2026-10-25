@@ -11,8 +11,7 @@
     </header>
 
     <div class="project-archive__grid">
-        {{- range .RegularPages.ByDate.Reverse -}}
-        {{- $project := . -}}
+        {{- range $index, $project := .RegularPages.ByDate.Reverse -}}
         {{- $cover := .Resources.GetMatch "cover.*" -}}
         <article class="project-archive-card{{ if .Params.featured }} project-archive-card--featured{{ end }}">
             <a class="project-archive-card__media" href="{{ .RelPermalink }}" aria-label="查看项目：{{ .Title }}">
@@ -20,7 +19,7 @@
                 <img src="{{ .RelPermalink }}" alt="{{ $project.Title }} 项目封面" loading="lazy" decoding="async">
                 {{- else -}}
                 <span class="project-archive-card__placeholder" aria-hidden="true">
-                    <span>{{ printf "%02d" (add $.RegularPages.Len 0) }}</span>
+                    <span>{{ printf "%02d" (add $index 1) }}</span>
                     <b>{{ $project.Title }}</b>
                     <i>PROJECT / CASE STUDY</i>
                 </span>
