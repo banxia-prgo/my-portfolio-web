@@ -37,11 +37,31 @@ function parseCookies(request) {
 }
 async function sessionFor(request, env) {
   const value = parseCookies(request)[COOKIE];
-  if (!value || !env.SESSION_SECRET || !env.SESSIONS) return null;
+  if (!value) { console.warn("[auth] cookie_missing"); return null; }
+  if (!env.SESSION_SECRET || !env.SESSIONS) {
+    console.warn("[auth] config_missing", { sessionSecret: Boolean(env.SESSION_SECRET), sessions: Boolean(env.SESSIONS) });
+    return null;
+  }
   const [id, sig] = value.split(".");
-  if (!id || !sig || !(await safeEqual(sig, await sign(id, env.SESSION_SECRET)))) return null;
-  const data = await env.SESSIONS.get("session:" + id, "json");
-  if (!data || data.expires < Date.now()) { await env.SESSIONS.delete("session:" + id); return null; }
+  if (!id || !sig || !(await safeEqual(sig, await sign(id, env.SESSION_SECRET)))) {
+    console.warn("[auth] signature_invalid");
+    return null;
+  }
+
+  // Workers KV is eventually consistent across locations. Retry briefly when a
+  // newly-created session has not reached the serving location yet.
+  let data = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    data = await env.SESSIONS.get("session:" + id, "json");
+    if (data) break;
+    if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+  }
+  if (!data) { console.warn("[auth] session_not_found"); return null; }
+  if (data.expires < Date.now()) {
+    console.warn("[auth] session_expired");
+    await env.SESSIONS.delete("session:" + id);
+    return null;
+  }
   return { ...data, id };
 }
 function validOrigin(request, env) {
