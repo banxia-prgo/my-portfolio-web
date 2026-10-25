@@ -11,7 +11,7 @@
     </div>
     <div class="banxia-portal-hero__content">
         <div class="banxia-portal-hero__copy">
-            <p class="banxia-kicker">Backend developer · Builder & learner</p>
+            <p class="banxia-kicker">C++ / PYTHON · SOFTWARE & VISION</p>
             <header class="entry-header"><h1 id="banxia-home-title">{{ .Title | markdownify }}</h1></header>
             <div class="banxia-portal-hero__lead">{{ .Content | markdownify }}</div>
             <p class="banxia-portal-hero__description">用代码解决实际问题，把项目经验整理成可复用的知识，也持续记录自己的成长轨迹。</p>
@@ -43,8 +43,8 @@
         <div class="banxia-profile-panel__eyebrow">01 / PROFILE</div>
         <div class="banxia-profile-panel__avatar" aria-hidden="true">半</div>
         <h2>半夏</h2>
-        <p class="banxia-profile-panel__role">Backend developer<br>Independent builder</p>
-        <p class="banxia-profile-panel__bio">关注后端开发、项目实践和技术积累。通过持续动手，把想法变成可以运行的东西。</p>
+        <p class="banxia-profile-panel__role">C++ / Python<br>Software & Vision Learner</p>
+        <p class="banxia-profile-panel__bio">关注 C++ 软件开发、机器视觉与深度学习实践。通过持续动手，把学习过程沉淀为可运行、可复现的项目。</p>
         <nav class="banxia-profile-panel__nav" aria-label="首页内容导航">
             <a href="{{ "projects/" | relURL }}"><span>项目作品</span><span aria-hidden="true">↗</span></a>
             <a href="{{ "posts/" | relURL }}"><span>技术随笔</span><span aria-hidden="true">↗</span></a>
@@ -63,9 +63,9 @@
         <section class="banxia-portal-section banxia-portal-section--focus" aria-labelledby="banxia-focus-title">
             <div class="banxia-portal-section__heading"><div><p class="banxia-kicker">What I focus on</p><h2 id="banxia-focus-title">正在关注</h2></div><span class="banxia-portal-section__index">02 / FOCUS</span></div>
             <div class="banxia-focus-grid">
-                <article class="banxia-focus-card"><span>01</span><h3>后端开发</h3><p>从接口设计、业务逻辑到数据处理，持续建立扎实的工程基础。</p><div class="banxia-focus-card__line"></div></article>
-                <article class="banxia-focus-card"><span>02</span><h3>项目实践</h3><p>通过真实的小项目练习，把抽象知识转化为可运行、可维护的成果。</p><div class="banxia-focus-card__line"></div></article>
-                <article class="banxia-focus-card"><span>03</span><h3>知识整理</h3><p>记录遇到的问题、解决思路与复盘过程，让每次实践都留下痕迹。</p><div class="banxia-focus-card__line"></div></article>
+                <article class="banxia-focus-card"><span>01</span><h3>机器视觉</h3><p>从图像处理与视觉基础开始，逐步探索检测、定位和实际场景中的应用。</p><div class="banxia-focus-card__line"></div></article>
+                <article class="banxia-focus-card"><span>02</span><h3>深度学习</h3><p>结合 Python 与 PyTorch 练习模型训练、推理和部署，逐步积累可展示的成果。</p><div class="banxia-focus-card__line"></div></article>
+                <article class="banxia-focus-card"><span>03</span><h3>工程落地</h3><p>把 C++、Qt 与视觉算法结合起来，关注工具可用性、运行效率和项目完整度。</p><div class="banxia-focus-card__line"></div></article>
             </div>
         </section>
 
@@ -74,7 +74,7 @@
             <div class="banxia-stack-panel">
                 <div class="banxia-stack-row"><span>Languages</span><div><b>C / C++</b><b>Python</b><b>JavaScript</b></div></div>
                 <div class="banxia-stack-row"><span>Development</span><div><b>Git</b><b>CMake</b><b>Linux</b><b>VS Code</b></div></div>
-                <div class="banxia-stack-row"><span>Learning</span><div><b>Backend</b><b>Algorithms</b><b>Problem Solving</b></div></div>
+                <div class="banxia-stack-row"><span>Learning</span><div><b>Machine Vision</b><b>Deep Learning</b><b>PyTorch</b><b>Qt Widgets</b></div></div>
             </div>
         </section>
 
@@ -82,7 +82,7 @@
             <div class="banxia-portal-section__heading"><div><p class="banxia-kicker">Selected work</p><h2 id="banxia-projects-title">精选项目</h2></div><a href="{{ "projects/" | relURL }}">全部项目 ↗</a></div>
             <div class="banxia-portal-project-grid">
                 {{- range $index, $project := first 3 $projects -}}
-                <a class="banxia-portal-project-card" href="{{ $project.RelPermalink }}"><div class="banxia-portal-project-card__visual" aria-hidden="true"><span>{{ printf "%02d" (add $index 1) }}</span><b>↗</b></div><div class="banxia-portal-project-card__body"><p class="banxia-portal-project-card__meta">PROJECT / {{ printf "%02d" (add $index 1) }}</p><h3>{{ $project.Title }}</h3>{{ with $project.Params.summary }}<p>{{ . }}</p>{{ else }}<p>查看项目详情与实践记录。</p>{{ end }}</div></a>
+                <a class="banxia-portal-project-card" href="{{ $project.RelPermalink }}"><div class="banxia-portal-project-card__visual" aria-hidden="true"><span>{{ printf "%02d" (add $index 1) }}</span><b>↗</b></div><div class="banxia-portal-project-card__body"><p class="banxia-portal-project-card__meta">{{ if $project.Params.featured }}FEATURED PROJECT{{ else }}PROJECT{{ end }} / {{ printf "%02d" (add $index 1) }}</p><h3>{{ $project.Title }}</h3>{{ with $project.Params.summary }}<p>{{ . }}</p>{{ else }}<p>查看项目详情与实践记录。</p>{{ end }}{{ with $project.Params.tech }}<div class="banxia-project-tech" aria-label="项目技术栈">{{ range first 4 . }}<span>{{ . }}</span>{{ end }}</div>{{ end }}</div></a>
                 {{- else -}}<div class="banxia-empty-state">项目内容正在整理中，欢迎稍后回来查看。</div>{{- end -}}
             </div>
         </section>
