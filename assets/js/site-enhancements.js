@@ -113,6 +113,53 @@
       }
     }
 
+    // Search, tag filtering and sorting for the technical notes archive.
+    const postGrid = document.getElementById('bx-post-grid');
+    if (postGrid) {
+      const cards = Array.from(postGrid.querySelectorAll('.bx-post-card'));
+      const searchInput = document.getElementById('bx-post-search');
+      const sortSelect = document.getElementById('bx-post-sort');
+      const tagButtons = Array.from(document.querySelectorAll('.bx-post-tags [data-tag]'));
+      const emptyState = document.getElementById('bx-post-empty');
+      const resultLabel = document.querySelector('.bx-post-results');
+      let activeTag = 'all';
+
+      const applyPostFilters = () => {
+        const query = (searchInput?.value || '').trim().toLocaleLowerCase();
+        const visibleCards = [];
+        cards.forEach((card) => {
+          const tags = (card.dataset.tags || '').split(/\\s+/).filter(Boolean);
+          const matchesTag = activeTag === 'all' || tags.includes(activeTag);
+          const matchesQuery = !query || (card.dataset.search || '').toLocaleLowerCase().includes(query);
+          const visible = matchesTag && matchesQuery;
+          card.hidden = !visible;
+          if (visible) visibleCards.push(card);
+        });
+        const sortMode = sortSelect?.value || 'newest';
+        visibleCards.sort((a, b) => {
+          if (sortMode === 'oldest') return (a.dataset.date || '').localeCompare(b.dataset.date || '');
+          if (sortMode === 'title') return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'zh-CN');
+          return (b.dataset.date || '').localeCompare(a.dataset.date || '');
+        });
+        visibleCards.forEach((card) => postGrid.appendChild(card));
+        if (emptyState) emptyState.hidden = visibleCards.length !== 0;
+        if (resultLabel) resultLabel.textContent = '显示 ' + visibleCards.length + ' / ' + cards.length + ' 篇随笔';
+      };
+
+      searchInput?.addEventListener('input', applyPostFilters);
+      sortSelect?.addEventListener('change', applyPostFilters);
+      tagButtons.forEach((button) => button.addEventListener('click', () => {
+        activeTag = button.dataset.tag || 'all';
+        tagButtons.forEach((item) => {
+          const active = item === button;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
+        applyPostFilters();
+      }));
+      applyPostFilters();
+    }
+
     // Add subtle entrance reveal only where supported; content remains visible without JS.
     if (!reduceMotion && 'IntersectionObserver' in window) {
       const revealTargets = document.querySelectorAll('.bx-project-card, .project-archive-card, .bx-learning-card, .bx-stats-card');
