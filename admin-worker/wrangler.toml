@@ -1,0 +1,16 @@
+name = "banxia-content-admin"
+main = "src/index.js"
+compatibility_date = "2026-10-25"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+GITHUB_OWNER = "banxia-prgo"
+GITHUB_REPO = "my-portfolio-web"
+GITHUB_BRANCH = "main"
+ALLOWED_GITHUB_LOGIN = "banxia-prgo"
+SITE_URL = "https://www.banxia.xin"
+ADMIN_ORIGIN = "https://admin.banxia.xin"
