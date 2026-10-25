@@ -155,3 +155,5 @@ body.bx-lightbox-open { overflow: hidden; }
 .bx-post-results { min-height: 1rem; color: var(--bx-muted); font-size: .75rem; }
 .bx-post-empty { padding: 2rem; border: 1px dashed var(--bx-line); border-radius: 14px; color: var(--bx-muted); text-align: center; }
 @media (max-width: 650px) { .bx-post-grid { grid-template-columns: 1fr; } .bx-post-tools { align-items: stretch; flex-direction: column; } .bx-post-sort { justify-content: space-between; } .bx-post-sort select { flex: 1; max-width: none; } .bx-post-card { padding: 1rem; } }
+
+.bx-post-card[hidden] { display: none !important; }
