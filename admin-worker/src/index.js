@@ -46,7 +46,8 @@ async function sessionFor(request, env) {
 }
 function validOrigin(request, env) {
   const origin = request.headers.get("Origin");
-  return !origin || origin === env.ADMIN_ORIGIN;
+  if (request.method === "GET" || request.method === "HEAD") return !origin || origin === env.ADMIN_ORIGIN;
+  return Boolean(origin && env.ADMIN_ORIGIN && origin === env.ADMIN_ORIGIN);
 }
 function slugify(s) {
   return String(s || "").normalize("NFKC").trim().toLowerCase()
@@ -85,7 +86,7 @@ async function putFile(env, token, path, content, message, sha, alreadyBase64 = 
   return github(env, token, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path.split("/").map(encodeURIComponent).join("/")}`, { method: "PUT", body: JSON.stringify(body) });
 }
 function safePath(kind, slug, fileName) {
-  if (!/^[\p{L}\p{N}][\p{L}\p{N}_-]{0,79}$/u.test(slug)) throw new Error("内容标识不合法");
+  if (kind !== "resume" && !/^[\p{L}\p{N}][\p{L}\p{N}_-]{0,79}$/u.test(slug)) throw new Error("内容标识不合法");
   if (kind === "post") return `content/posts/${slug}/index.md`;
   if (kind === "project") return `content/projects/${slug}/index.md`;
   if (kind === "resume") return "content/resume/_index.md";
@@ -118,7 +119,7 @@ async function boot(){try{const me=await api("/me");if(me.authenticated){$("logi
 $("loginBtn").onclick=()=>location.href="/auth/login";$("logout").onclick=async()=>{await api("/auth/logout",{method:"POST",body:"{}"});location.reload()};
 $("postPreview").onclick=()=>{const body=$("postBody").value;$("preview").classList.remove("hidden");$("preview").textContent=body.slice(0,4000);status("纯文本预览（未执行 HTML）。正式效果以 Hugo 页面为准。")};
 $("postSave").onclick=async()=>{try{const title=$("postTitle").value.trim();if(!title)throw Error("请填写文章标题");const tags=$("postTags").value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);const slug=$("postSlug").value.trim()||title;const body="---\ntitle: "+JSON.stringify(title)+"\ndate: "+new Date().toISOString()+"\nsummary: "+JSON.stringify($("postSummary").value.trim())+"\ntags: "+JSON.stringify(tags)+"\ndraft: false\n---\n\n"+$("postBody").value;const d=await api("/content/save",{method:"POST",body:JSON.stringify({kind:"post",slug,content:body})});status("已提交到 GitHub： "+d.path+"。Cloudflare Pages 完成构建后上线。")}catch(e){status(e.message)}};
-$("projectSave").onclick=async()=>{try{const title=$("projectTitle").value.trim();if(!title)throw Error("请填写项目名称");const tags=$("projectTags").value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);const body="---\ntitle: "+JSON.stringify(title)+"\ndate: "+new Date().toISOString()+"\nsummary: "+JSON.stringify($("projectSummary").value.trim())+"\ntags: "+JSON.stringify(tags)+"\nrepo: "+JSON.stringify($("projectRepo").value.trim())+"\ndemo: "+JSON.stringify($("projectDemo").value.trim())+"\n---\n\n"+$("projectBody").value;const d=await api("/content/save",{method:"POST",body:JSON.stringify({kind:"project",slug:$("projectSlug").value.trim()||title,content:body})});status("已提交到 GitHub："+d.path+"。请在项目页确认字段显示效果。")}catch(e){status(e.message)}};
+$("projectSave").onclick=async()=>{try{const title=$("projectTitle").value.trim();if(!title)throw Error("请填写项目名称");const tags=$("projectTags").value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);const body="---\ntitle: "+JSON.stringify(title)+"\ndate: "+new Date().toISOString()+"\nsummary: "+JSON.stringify($("projectSummary").value.trim())+"\ncategories: [\\"项目实践\\"]\ngithub: "+JSON.stringify($("projectRepo").value.trim())+"\ndemo: "+JSON.stringify($("projectDemo").value.trim())+"\ntech: "+JSON.stringify(tags)+"\nfeatured: false\nweight: 100\ndraft: false\n---\n\n"+$("projectBody").value;const d=await api("/content/save",{method:"POST",body:JSON.stringify({kind:"project",slug:$("projectSlug").value.trim()||title,content:body})});status("已提交到 GitHub："+d.path+"。请在项目页确认字段显示效果。")}catch(e){status(e.message)}};
 $("resumeLoad").onclick=async()=>{try{const d=await api("/content/read?path="+encodeURIComponent("content/resume/_index.md"));$("resumeBody").value=d.content;status("已读取当前简历。")}catch(e){status(e.message)}};
 $("resumeSave").onclick=async()=>{try{const content=$("resumeBody").value;if(!content.startsWith("---"))throw Error("简历内容必须保留以 --- 开头的 front matter");const d=await api("/content/save",{method:"POST",body:JSON.stringify({kind:"resume",content})});status("简历已提交："+d.path)}catch(e){status(e.message)}};
 $("imageUpload").onclick=async()=>{try{const f=$("imageFile").files[0];if(!f)throw Error("请先选择图片");if(f.size>4*1024*1024)throw Error("图片不能超过 4 MB");const allowed=["image/png","image/jpeg","image/webp","image/gif","image/svg+xml"];if(!allowed.includes(f.type))throw Error("不支持该图片格式");const b64=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(",")[1]);r.onerror=reject;r.readAsDataURL(f)});const d=await api("/upload",{method:"POST",body:JSON.stringify({name:f.name,type:f.type,data:b64})});$("imageResult").innerHTML="";const p=document.createElement("p");p.textContent="上传成功："+d.url;const input=document.createElement("input");input.value="!["+f.name+"]("+d.url+")";input.readOnly=true;input.onclick=()=>input.select();$("imageResult").append(p,input);status("图片已提交到仓库。")}catch(e){status(e.message)}};
@@ -131,6 +132,7 @@ async function route(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": env.ADMIN_ORIGIN, "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type", "vary": "Origin" } });
   if (url.pathname === "/" || url.pathname === "/admin") return html(PAGE);
   if (url.pathname.startsWith("/api/") && !validOrigin(request, env)) return json({ error: "Origin 不允许" }, 403);
+  if (url.pathname.startsWith("/api/") && request.method === "POST" && request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") return json({ error: "仅接受 application/json 请求" }, 415);
   if (url.pathname === "/auth/login") {
     if (!env.GITHUB_CLIENT_ID || !env.SESSION_SECRET) return json({ error: "尚未配置 GITHUB_CLIENT_ID / SESSION_SECRET" }, 503);
     const state = randomHex(24);
@@ -139,7 +141,9 @@ async function route(request, env) {
     target.searchParams.set("redirect_uri", new URL("/auth/callback", request.url).toString());
     target.searchParams.set("scope", "repo read:user");
     target.searchParams.set("state", state);
-    return Response.redirect(target, 302).withHeaders?.({}) || new Response(null, {status:302,headers:{location:target.toString(),"set-cookie":cookie("bx_oauth_state",state,600),"cache-control":"no-store"}});
+    const headers = new Headers({ location: target.toString(), "cache-control": "no-store" });
+    headers.append("set-cookie", cookie("bx_oauth_state", state, 600));
+    return new Response(null, { status: 302, headers });
   }
   if (url.pathname === "/auth/callback") {
     const got = url.searchParams.get("state") || "";
@@ -174,7 +178,8 @@ async function route(request, env) {
       if (url.pathname === "/api/content/list" && request.method === "GET") return json({items:await listContent(env,session.token)});
       if (url.pathname === "/api/content/read" && request.method === "GET") {
         const path=url.searchParams.get("path")||"";
-        if(!/^content\/(posts|projects)\/.+\.md$/.test(path) && path!=="content/resume/_index.md") return json({error:"不允许读取此路径"},400);
+        const allowedContentPath = /^content\/(posts|projects)\/[\p{L}\p{N}_-]+(?:\/[\p{L}\p{N}_.-]+)*\.md$/u.test(path);
+        if(!allowedContentPath && path!=="content/resume/_index.md") return json({error:"不允许读取此路径"},400);
         const file=await github(env,session.token,`/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(env.GITHUB_BRANCH||"main")}`);
         return json({path,content:decodeURIComponent(escape(atob(file.content.replace(/\n/g,"")))),sha:file.sha});
       }
