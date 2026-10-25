@@ -26,11 +26,11 @@ menu:
       name: 项目
       url: /projects/
       weight: 2
-    - identifier: resume
-      name: 简历
-      url: /resume/
-      weight: 3
     - identifier: posts
       name: 随笔
       url: /posts/
+      weight: 3
+    - identifier: resume
+      name: 简历
+      url: /resume/
       weight: 4
