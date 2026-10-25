@@ -79,6 +79,9 @@ body { background: var(--theme); color: var(--primary); }
 .banxia-portal-project-card__meta { margin: 0 0 .8rem; color: var(--secondary); font-size: .62rem; font-weight: 800; letter-spacing: .1em; }
 .banxia-portal-project-card h3 { margin: 0 0 .65rem; font-size: 1.25rem; letter-spacing: -.04em; overflow-wrap: anywhere; }
 .banxia-portal-project-card__body > p:last-child { margin: 0; color: var(--secondary); font-size: .84rem; line-height: 1.6; }
+.banxia-project-tech { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .9rem; }
+.banxia-project-tech span { padding: .28rem .55rem; border: 1px solid var(--border); border-radius: 999px; color: var(--secondary); background: var(--theme); font-size: .64rem; font-weight: 700; }
+.banxia-project-tech span:first-child { border-color: color-mix(in srgb, var(--banxia-accent) 40%, var(--border)); color: var(--banxia-accent); }
 .banxia-portal-notes-list { border-top: 1px solid var(--border); }
 .banxia-portal-note-row { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 1.15rem 0; border-bottom: 1px solid var(--border); color: var(--primary); text-decoration: none; transition: padding 180ms ease, color 180ms ease; }
 .banxia-portal-note-row:hover { padding-left: .5rem; color: var(--banxia-accent); }
