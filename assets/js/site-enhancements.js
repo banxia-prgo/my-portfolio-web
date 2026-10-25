@@ -128,7 +128,7 @@
         const query = (searchInput?.value || '').trim().toLocaleLowerCase();
         const visibleCards = [];
         cards.forEach((card) => {
-          const tags = (card.dataset.tags || '').split(/\\s+/).filter(Boolean);
+          const tags = (card.dataset.tags || '').split(/\s+/).filter(Boolean);
           const matchesTag = activeTag === 'all' || tags.includes(activeTag);
           const matchesQuery = !query || (card.dataset.search || '').toLocaleLowerCase().includes(query);
           const visible = matchesTag && matchesQuery;
