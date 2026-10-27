@@ -1,0 +1,16 @@
+name = "banxia-content-admin"
+main = "src/index.js"
+compatibility_date = "2026-10-25"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "6d600b4be5bd4c58aa1a2566abb12450"
+
+[vars]
+GITHUB_OWNER = "banxia-prgo"
+GITHUB_REPO = "my-portfolio-web"
+GITHUB_BRANCH = "content-admin-test"
+ALLOWED_GITHUB_LOGIN = "banxia-prgo"
+SITE_URL = "https://www.banxia.xin"
+ADMIN_ORIGIN = "https://banxia-content-admin.dhq1015.workers.dev"
