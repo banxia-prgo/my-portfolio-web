@@ -1,0 +1,33 @@
+/* Vue shell mapped to the original PaperMod site structure */
+.header { width: 100%; }
+.header-inner { width: min(1120px, calc(100% - 48px)); height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+.logo { flex: 0 0 auto; }
+.logo .brand { color: #172b4d; font-family: "STKaiti", "KaiTi", serif; font-size: 1.3rem; font-weight: 750; letter-spacing: .13em; text-decoration: none; }
+#menu { display: flex; align-items: center; gap: 28px; margin: 0 0 0 auto; padding: 0; list-style: none; }
+#menu a { color: #61708c; text-decoration: none; }
+#menu a.active { color: #8278e8; }
+.header-actions { margin-left: 28px; }
+.main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; flex: 1 0 auto; }
+.home-page { width: 100%; }
+.footer { width: 100%; }
+.footer-inner { width: min(1120px, calc(100% - 48px)); margin: 0 auto; display: flex; justify-content: space-between; align-items: end; gap: 24px; }
+.footer-mark { color: #172b4d; font-size: 14px; font-weight: 800; letter-spacing: .12em; }
+.footer-inner p { margin: 7px 0 0; }
+.footer-meta { display: flex; gap: 24px; color: #7382a4; font-size: 11px; }
+.bx-home-content { padding-bottom: 32px; }
+.bx-project-card__body h3 a { color: #182b4a; text-decoration: none; }
+.bx-project-card__foot a { color: #71819b; text-decoration: none; }
+.bx-note { text-decoration: none; }
+.bx-note__content strong { color: #263a5b; }
+.bx-stats-grid a { color: inherit; }
+@media (max-width: 720px) {
+  .header-inner { width: calc(100% - 32px); height: 54px; }
+  #menu { display: none; }
+  .header-actions { margin-left: auto; }
+  .mobile-menu { display: grid; place-items: center; border: 0; background: transparent; color: #172b4d; }
+  .mobile-nav { display: grid; gap: 0; padding: 8px 24px 18px; border-top: 1px solid #f0f2f8; background: #fff; }
+  .mobile-nav a { padding: 12px 0; color: #61708c; text-decoration: none; }
+  .main { width: calc(100% - 28px); }
+  .footer-inner { width: calc(100% - 36px); align-items: flex-start; flex-direction: column; gap: 16px; }
+  .footer-meta { flex-wrap: wrap; gap: 12px; }
+}
