@@ -24,11 +24,12 @@ const headings = computed(() => {
   const tokens = markdown.parse(entry.value.content || '', {})
   const result: Array<{ level: number; text: string; id: string }> = []
   for (let index = 0; index < tokens.length; index += 1) {
-    if (tokens[index].type !== 'heading_open') continue
+    const token = tokens[index]
+    if (!token || token.type !== 'heading_open') continue
     const inline = tokens[index + 1]
     const text = inline?.type === 'inline' ? inline.content : ''
     result.push({
-      level: Number(tokens[index].tag.slice(1)),
+      level: Number(token.tag.slice(1)),
       text,
       id: slugify(text) || `section-${result.length + 1}`,
     })
@@ -44,7 +45,8 @@ const rendered = computed(() => {
   const renderer = new MarkdownIt({ html: false, linkify: true, typographer: true })
   renderer.renderer.rules.heading_open = (tokens, idx, options, _env, self) => {
     const heading = headings.value[headingIndex++]
-    if (heading) tokens[idx].attrSet('id', heading.id)
+    const token = tokens[idx]
+    if (heading && token) token.attrSet('id', heading.id)
     return self.renderToken(tokens, idx, options)
   }
   return renderer.render(entry.value.content || '')
@@ -100,16 +102,19 @@ function initTableOfContents() {
     const visible = entries
       .filter(item => item.isIntersecting)
       .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
-    if (visible.length) {
-      setActive(visible[0].target as HTMLElement)
+    const firstVisible = visible[0]
+    if (firstVisible) {
+      setActive(firstVisible.target as HTMLElement)
     } else {
       const passed = targets.filter(item => item.getBoundingClientRect().top <= 140)
-      setActive(passed[passed.length - 1] || targets[0])
+      const activeTarget = passed[passed.length - 1] ?? targets[0]
+      if (activeTarget) setActive(activeTarget)
     }
   }, { rootMargin: '-110px 0px -65% 0px', threshold: [0, 1] })
 
   targets.forEach(target => tocObserver?.observe(target))
-  setActive(targets[0])
+  const firstTarget = targets[0]
+  if (firstTarget) setActive(firstTarget)
 
   const desktop = window.matchMedia('(min-width: 1451px)')
   let handle: HTMLSpanElement | null = null
