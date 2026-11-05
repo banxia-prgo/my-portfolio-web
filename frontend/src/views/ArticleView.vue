@@ -21,11 +21,19 @@ const slugify = (value: string) => value.trim().toLocaleLowerCase()
   .replace(/[^\u3400-\u9fff\w-]/g, '')
 const headings = computed(() => {
   if (!entry.value) return []
-  return markdown.parse(entry.value.content || '', {}).filter(token => token.type === 'heading_open').map((token, index) => {
-    const inline = markdown.parse(entry.value!.content || '', {}).filter(item => item.type === 'inline')
-    const text = inline[index]?.content || ''
-    return { level: Number(token.tag.slice(1)), text, id: slugify(text) || `section-${index + 1}` }
-  })
+  const tokens = markdown.parse(entry.value.content || '', {})
+  const result: Array<{ level: number; text: string; id: string }> = []
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index].type !== 'heading_open') continue
+    const inline = tokens[index + 1]
+    const text = inline?.type === 'inline' ? inline.content : ''
+    result.push({
+      level: Number(tokens[index].tag.slice(1)),
+      text,
+      id: slugify(text) || `section-${result.length + 1}`,
+    })
+  }
+  return result
 })
 const rendered = computed(() => {
   if (!entry.value) return ''
