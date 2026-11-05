@@ -10,8 +10,9 @@ async function getCsrfToken(): Promise<string> {
       (import.meta.env.VITE_API_BASE_URL || 'https://api.banxia.xin') + '/api/auth/csrf',
       { withCredentials: true, timeout: 15000 },
     ).then(response => {
-      csrfToken = response.data.csrf_token
-      return csrfToken
+      const token = response.data.csrf_token
+      csrfToken = token
+      return token
     }).finally(() => { csrfRequest = undefined })
   }
   return csrfRequest
