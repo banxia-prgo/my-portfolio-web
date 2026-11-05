@@ -1,11 +1,167 @@
 <script setup lang="ts">
-import {onMounted,ref} from 'vue'
-import {loadCatalog,type ArticleContent} from '@/api/content'
-import EntryCard from '@/components/EntryCard.vue'
-const projects=ref<ArticleContent[]>([]),posts=ref<ArticleContent[]>([])
-onMounted(async()=>{const data=await loadCatalog();projects.value=data.projects.slice(0,2);posts.value=data.posts.slice(0,2)})
+import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { loadCatalog, type ArticleContent } from '@/api/content'
+
+const projects = ref<ArticleContent[]>([])
+const posts = ref<ArticleContent[]>([])
+
+onMounted(async () => {
+  try {
+    const data = await loadCatalog()
+    projects.value = data.projects.slice(0, 1)
+    posts.value = data.posts.slice(0, 2)
+  } catch (error) {
+    console.error('加载首页内容失败', error)
+  }
+})
 </script>
-<template><div class="page-wrap home"><section class="hero"><div><span class="eyebrow">PERSONAL SPACE / 2026</span><h1>让代码有迹可循，<br><em>让思绪自由生长。</em></h1><p>你好，我是半夏。这里收纳技术实践、项目探索，以及那些值得记录的思考。</p><div class="actions"><RouterLink to="/posts/" class="primary">阅读随笔 ↗</RouterLink><RouterLink to="/projects/" class="secondary">探索项目</RouterLink></div></div><div class="art"><div class="orbit"></div><div class="core">半<small>BAN XIA</small></div><span class="note">IDEAS IN MOTION</span></div><span class="scroll">↓ SCROLL TO EXPLORE</span></section><section class="intro"><div><span class="eyebrow">A LITTLE ABOUT THIS SPACE</span><h2>记录不是终点，<br>而是下一次出发的起点。</h2></div><p>从 C++、计算机视觉到工业软件，从一个想法到可以运行的作品。把学习过程沉淀下来，也把每一次试错变成经验。</p></section><section class="content"><div class="heading"><div><span class="eyebrow">SELECTED WORKS / 01</span><h2>近期项目</h2></div><RouterLink to="/projects/">全部项目 ↗</RouterLink></div><div class="grid"><EntryCard v-for="(e,i) in projects" :key="e.slug" :entry="e" :index="i"/></div></section><section class="content journal"><div class="heading"><div><span class="eyebrow">NOTES & THOUGHTS / 02</span><h2>技术随笔</h2></div><RouterLink to="/posts/">浏览归档 ↗</RouterLink></div><div class="grid"><EntryCard v-for="(e,i) in posts" :key="e.slug" :entry="e" :index="i"/></div></section><section class="closing"><span class="eyebrow">KEEP MAKING THINGS</span><p>每一次认真构建，<em>都在靠近想成为的自己。</em></p><RouterLink to="/resume/">认识更多关于我 ↗</RouterLink></section></div></template>
-<style scoped>
-.home{padding-top:50px}.hero{position:relative;min-height:510px;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;padding:48px 6% 75px;overflow:hidden;border:1px solid #e9e5f5;border-radius:28px;background:linear-gradient(118deg,#fff 8%,#f7f5ff 65%,#e9f8f6)}.eyebrow{color:#7665bd;font:10px 'DM Mono';letter-spacing:.18em}.hero h1{margin:25px 0 20px;font-size:clamp(38px,5vw,64px);line-height:1.3;letter-spacing:-.075em}.hero h1 em{color:#8170cc;font-style:normal}.hero p{max-width:430px;color:#777286;font-size:14px;line-height:2}.actions{display:flex;gap:12px;margin-top:28px}.primary,.secondary{padding:13px 20px;border-radius:99px;font-size:12px}.primary{background:#8170cc;color:white}.secondary{border:1px solid #ded9ef;color:#665b91}.art{position:relative;justify-self:center;width:min(100%,370px);aspect-ratio:1;display:grid;place-items:center}.orbit{position:absolute;inset:7%;border:1px solid #bdb2eb;border-radius:50%;transform:rotate(-25deg) scaleY(.65)}.core{width:52%;aspect-ratio:1;display:grid;place-content:center;text-align:center;border-radius:50%;background:linear-gradient(145deg,#e1dbff,#ccefeb);box-shadow:0 25px 70px #7f72bd2b;color:#6959b3;font-size:82px;font-weight:800}.core small{font:10px 'DM Mono';letter-spacing:.3em}.note{position:absolute;right:0;top:16%;color:#8c84a8;font:9px 'DM Mono';letter-spacing:.15em}.scroll{position:absolute;bottom:24px;left:6%;color:#9992aa;font:9px 'DM Mono';letter-spacing:.15em}.intro{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:75px 5%;align-items:center}.intro h2{font-size:27px;line-height:1.5}.intro p{color:#817d91;font-size:13px;line-height:2.1}.content{padding:35px 0 60px}.heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:24px}.heading h2{margin:8px 0 0;font-size:27px}.heading>a,.closing>a{color:#7665bd;font-size:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.journal{border-top:1px solid #eae7f2;padding-top:45px}.closing{margin:35px 0 10px;padding:42px;border-radius:22px;background:#f0edff;text-align:center}.closing p{font-size:clamp(22px,3vw,34px);font-weight:700}.closing em{color:#7d6bc7;font-style:normal}@media(max-width:760px){.home{padding-top:22px}.hero{grid-template-columns:1fr;padding:35px 24px 65px}.hero h1{font-size:39px}.art{width:75%;margin-top:25px}.intro{grid-template-columns:1fr;gap:8px;padding:48px 5%}.grid{grid-template-columns:1fr}.closing{padding:32px 18px}}
-</style>
+
+<template>
+  <div class="home-page">
+    <section class="bx-home-hero" aria-labelledby="bx-home-title">
+      <div class="bx-home-hero__copy">
+        <p class="bx-eyebrow">HELLO, I'M BANXIA</p>
+        <h1 id="bx-home-title">半夏小筑</h1>
+        <p class="bx-home-hero__subtitle"><span></span>代码与思绪的栖居之所</p>
+        <p class="bx-home-hero__desc">
+          热爱技术，专注于计算机视觉、深度学习与工程实践，<br>
+          在代码与思考中，记录成长，分享思绪。
+        </p>
+        <div class="bx-home-hero__actions">
+          <RouterLink class="bx-btn bx-btn--primary" to="/projects/">♧ 查看我的项目 <span>→</span></RouterLink>
+          <RouterLink class="bx-btn bx-btn--ghost" to="/posts/">▣ 阅读随笔</RouterLink>
+        </div>
+      </div>
+      <div class="bx-home-hero__poem">在代码构筑的世界里<br>遇见更好的自己<br><span>— 半夏</span></div>
+    </section>
+
+    <section class="bx-tech-strip" aria-label="技术方向">
+      <div class="bx-tech-strip__label"><span>‹/›</span> 技术方向</div>
+      <div class="bx-tech-strip__items">
+        <span class="bx-pill bx-pill--purple">◉ C++</span>
+        <span class="bx-pill bx-pill--blue">◉ Python</span>
+        <span class="bx-pill bx-pill--purple">◉ OpenCV</span>
+        <span class="bx-pill bx-pill--purple">◉ 深度学习</span>
+        <span class="bx-pill bx-pill--aqua">◉ 机器视觉</span>
+        <span class="bx-pill bx-pill--aqua">◉ Linux</span>
+        <span class="bx-pill bx-pill--purple">◉ Git</span>
+        <span class="bx-pill bx-pill--aqua">◉ Docker</span>
+        <span class="bx-pill bx-pill--blue">◉ Web 开发</span>
+      </div>
+      <span class="bx-tech-strip__next">›</span>
+    </section>
+
+    <div class="bx-home-content">
+      <div class="bx-home-main">
+        <section class="bx-section bx-projects" aria-labelledby="bx-projects-title">
+          <div class="bx-section__head">
+            <h2 id="bx-projects-title"><span>☆</span> 精选项目</h2>
+            <RouterLink to="/projects/">查看全部 →</RouterLink>
+          </div>
+          <div class="bx-project-grid">
+            <article v-if="projects.length" class="bx-project-card">
+              <RouterLink class="bx-project-card__visual bx-project-card__visual--browser" :to="projects[0].href">
+                <div class="bx-browser-mock">
+                  <div class="bx-browser-mock__bar"><i></i><i></i><i></i><span>图片浏览器</span></div>
+                  <div class="bx-browser-mock__body">
+                    <div class="bx-browser-mock__side"></div>
+                    <div class="bx-browser-mock__tiles"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                    <div class="bx-browser-mock__preview"></div>
+                  </div>
+                </div>
+              </RouterLink>
+              <div class="bx-project-card__body">
+                <h3><RouterLink :to="projects[0].href">{{ projects[0].title }}</RouterLink><span class="bx-tag-hot">推荐</span></h3>
+                <p>{{ projects[0].summary }}</p>
+                <div class="bx-project-tags"><span>C++</span><span>Qt</span><span>图像处理</span></div>
+                <div class="bx-project-card__foot">
+                  <a href="https://github.com/banxia-prgo/picture_browser" target="_blank" rel="noopener">◉ GitHub</a>
+                  <RouterLink :to="projects[0].href">项目详情 →</RouterLink>
+                </div>
+              </div>
+            </article>
+            <article v-else class="bx-project-card">
+              <div class="bx-project-card__visual bx-project-card__visual--browser">
+                <div class="bx-browser-mock"><div class="bx-browser-mock__bar"><i></i><i></i><i></i><span>图片浏览器</span></div><div class="bx-browser-mock__body"><div class="bx-browser-mock__side"></div><div class="bx-browser-mock__tiles"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bx-browser-mock__preview"></div></div></div>
+              </div>
+              <div class="bx-project-card__body"><h3>图片浏览器 <span class="bx-tag-hot">项目</span></h3><p>基于 C++ 和 Qt 的本地图片浏览工具。</p><div class="bx-project-tags"><span>C++</span><span>Qt</span><span>图像处理</span></div></div>
+            </article>
+
+            <article class="bx-project-card">
+              <div class="bx-project-card__visual bx-project-card__visual--vision">
+                <div class="bx-vision-scene"><span class="bx-vision-car"></span><i></i><b></b><em></em><small>VISION / STUDY</small></div>
+              </div>
+              <div class="bx-project-card__body">
+                <h3>机器视觉学习 <span class="bx-tag-study">学习中</span></h3>
+                <p>从 OpenCV 的目标检测与图像处理基础出发，逐步搭建可复现的视觉实验。</p>
+                <div class="bx-project-tags"><span>Python</span><span>OpenCV</span><span>YOLO</span></div>
+                <div class="bx-project-card__foot"><span>学习方向</span><RouterLink to="/resume/">学习计划 →</RouterLink></div>
+              </div>
+            </article>
+
+            <article class="bx-project-card">
+              <div class="bx-project-card__visual bx-project-card__visual--learning">
+                <div class="bx-neural-art"><span></span><i></i><b></b><em></em><small>DEEP LEARNING</small></div>
+              </div>
+              <div class="bx-project-card__body">
+                <h3>深度学习实践 <span class="bx-tag-study">学习中</span></h3>
+                <p>基于 PyTorch 学习图像分类、模型训练与可视化，积累从实验到部署的经验。</p>
+                <div class="bx-project-tags"><span>Python</span><span>PyTorch</span><span>深度学习</span></div>
+                <div class="bx-project-card__foot"><span>学习方向</span><RouterLink to="/posts/">学习笔记 →</RouterLink></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="bx-section bx-notes" aria-labelledby="bx-notes-title">
+          <div class="bx-section__head">
+            <h2 id="bx-notes-title"><span>✎</span> 最新随笔</h2>
+            <RouterLink to="/posts/">查看全部 →</RouterLink>
+          </div>
+          <div class="bx-note-list">
+            <RouterLink v-for="post in posts" :key="post.slug" class="bx-note" :to="post.href">
+              <span class="bx-note__thumb" :class="post.slug.includes('linux') ? 'bx-note__thumb--mountain' : 'bx-note__thumb--code'"><i></i><b></b></span>
+              <span class="bx-note__content">
+                <strong>{{ post.title }}</strong>
+                <span>{{ post.summary }}</span>
+                <small>▣ {{ post.date?.slice(0, 10) }}　·　{{ (post.tags || []).join(' · ') }}　·　阅读笔记</small>
+              </span>
+              <span class="bx-note__arrow">→</span>
+            </RouterLink>
+            <p v-if="!posts.length" class="bx-empty">随笔正在整理中。</p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="bx-home-sidebar">
+        <section class="bx-about-card">
+          <div class="bx-about-card__leaf">❧</div>
+          <div class="bx-about-card__heading"><span class="bx-avatar">半</span><div><h2>关于我</h2><p>一名热爱技术的开发者</p></div></div>
+          <p class="bx-about-card__intro">目前专注于计算机视觉、深度学习和工程实践，持续学习，记录成长。</p>
+          <div class="bx-about-item"><span>♧</span><div><strong>学习方向</strong><p>机器视觉 · 深度学习 · 工程落地</p></div></div>
+          <div class="bx-about-item"><span>♧</span><div><strong>联系方式</strong><p>暂未公开，敬请期待</p></div></div>
+          <RouterLink class="bx-about-link" to="/resume/">查看我的简历 →</RouterLink>
+        </section>
+
+        <section class="bx-learning-card">
+          <div class="bx-section__head"><h2><span>◎</span> 我的学习方向</h2><RouterLink to="/resume/">更多内容 →</RouterLink></div>
+          <div class="bx-learning-step"><span>01</span><div><strong>机器视觉</strong><p>OpenCV · 图像处理 · 目标检测</p></div><small>进行中</small></div>
+          <div class="bx-learning-step"><span>02</span><div><strong>深度学习</strong><p>PyTorch · 模型训练 · 项目实践</p></div></div>
+          <div class="bx-learning-step"><span>03</span><div><strong>工程实践</strong><p>系统设计 · 项目部署 · 代码规范</p></div></div>
+        </section>
+
+        <section class="bx-stats-card">
+          <div class="bx-section__head"><h2><span>▥</span> 数据一览</h2></div>
+          <div class="bx-stats-grid">
+            <RouterLink to="/posts/"><strong>✎　{{ posts.length }}</strong><span>原创随笔（首页展示）</span></RouterLink>
+            <RouterLink to="/projects/"><strong>‹/›　{{ projects.length }}</strong><span>精选项目（首页展示）</span></RouterLink>
+            <div><strong>♧　3</strong><span>学习方向</span></div>
+            <div><strong>∞</strong><span>持续成长</span></div>
+          </div>
+          <blockquote>“ 永远保持学习的热情<br>让技术为生活创造更多可能 ”</blockquote>
+        </section>
+      </aside>
+    </div>
+  </div>
+</template>
