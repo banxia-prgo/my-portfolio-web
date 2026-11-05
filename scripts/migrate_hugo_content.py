@@ -81,13 +81,20 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
             cover = cover.get("image") or cover.get("src") or ""
         if cover and not str(cover).startswith(("http://", "https://", "/")):
             cover = f"/content/{name}/{slug}/{cover}"
+        tags = meta.get("tags") or []
+        if isinstance(tags, str):
+            tags = [tags]
+        categories = meta.get("categories") or []
+        if isinstance(categories, str):
+            categories = [categories]
         result.append({
             "slug": slug,
+            "category": "project" if name == "projects" else "post",
             "title": title,
             "summary": str(meta.get("summary") or meta.get("description") or ""),
             "date": date_value,
-            "tags": meta.get("tags") or [],
-            "categories": meta.get("categories") or [],
+            "tags": tags,
+            "categories": categories,
             "draft": bool(meta.get("draft", False)),
             "weight": meta.get("weight", 0),
             "featured": bool(meta.get("featured", False)),
@@ -114,7 +121,7 @@ def main() -> None:
     resume_dir = CONTENT / "resume"
     resume = []
     if resume_dir.exists():
-        for page in resume_dir.rglob("index.md"):
+        for page in sorted(list(resume_dir.rglob("index.md")) + list(resume_dir.rglob("_index.md"))):
             meta, body = parse_page(page)
             resume.append({"meta": json_value(meta), "content": body})
     (PUBLIC / "resume.json").write_text(json.dumps(resume, ensure_ascii=False, indent=2), encoding="utf-8")
