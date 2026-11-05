@@ -94,6 +94,7 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
             "cover": cover,
             "content": rewrite_assets(body, name, slug),
             "permalink": f"/{name}/{slug}/",
+            "href": f"/{name}/{slug}/",
             "source": page.relative_to(ROOT).as_posix(),
         })
     return result
@@ -101,6 +102,9 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
 
 def main() -> None:
     PUBLIC.mkdir(parents=True, exist_ok=True)
+    static_dir = ROOT / "static"
+    if static_dir.exists():
+        shutil.copytree(static_dir, ROOT / "frontend" / "public", dirs_exist_ok=True)
     payload = {
         "generatedAt": datetime.now().astimezone().isoformat(),
         "posts": migrate_collection("posts"),
