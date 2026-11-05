@@ -9,7 +9,10 @@ class RegisterIn(BaseModel):
     @field_validator("nickname")
     @classmethod
     def normalize_nickname(cls, value: str) -> str:
-        return value.strip()
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("昵称不能为空")
+        return normalized
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -31,7 +34,10 @@ class CommentIn(BaseModel):
     @field_validator("content")
     @classmethod
     def normalize_content(cls, value: str) -> str:
-        return value.strip()
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("评论内容不能为空")
+        return normalized
 
 class ProfileUpdate(BaseModel):
     nickname: str = Field(min_length=1, max_length=40)
