@@ -22,3 +22,6 @@ class CommentIn(BaseModel):
     article_slug: str = Field(min_length=1, max_length=180, pattern=r"^[a-zA-Z0-9/_-]+$")
     content: str = Field(min_length=1, max_length=5000)
     parent_id: int | None = None
+
+class ProfileUpdate(BaseModel):
+    nickname: str = Field(min_length=1, max_length=40)
