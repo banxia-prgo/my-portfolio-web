@@ -154,3 +154,18 @@ body.toc-is-resizing { cursor: col-resize; user-select: none; }
 .resume-tags span { padding: .35rem .7rem; border-radius: 999px; color: #7165c6; background: #f1efff; font-size: .72rem; }
 .resume-note { color: var(--secondary); font-size: .8rem; }
 @media (max-width: 1450px) { .post-single.post-has-toc { max-width: 900px; } }
+
+.bx-site-progress { position: fixed; z-index: 1000; top: 0; left: 0; width: 0; height: 3px; background: linear-gradient(90deg, #8d83e8, #a8dcd7); box-shadow: 0 0 10px rgba(130,120,232,.25); pointer-events: none; }
+.bx-back-top { position: fixed; z-index: 80; right: 24px; bottom: 24px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(130,120,232,.25); border-radius: 50%; color: #fff; background: linear-gradient(135deg,#8f84ed,#7774df); box-shadow: 0 8px 24px rgba(75,67,130,.2); font-size: 1.2rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease, visibility .2s ease; }
+.bx-back-top.is-visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.bx-reading-time { margin-left: .35rem; color: var(--secondary); }
+.bx-lightbox { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 4rem 2rem 2rem; background: rgba(20,19,34,.88); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s ease; }
+.bx-lightbox.is-open { opacity: 1; visibility: visible; }
+.bx-lightbox img { display: block; max-width: min(94vw,1400px); max-height: 84vh; object-fit: contain; border-radius: 8px; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+.bx-lightbox__close { position: absolute; top: 18px; right: 22px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; color: white; background: rgba(255,255,255,.1); font-size: 1.8rem; }
+body.bx-lightbox-open { overflow: hidden; }
+.bx-reveal-ready { opacity: 0; transform: translateY(14px); transition: opacity .45s ease, transform .45s ease; }
+.bx-reveal-ready.bx-in-view { opacity: 1; transform: translateY(0); }
+.site-enhancements-anchor { display: none; }
+@media (max-width: 600px) { .bx-back-top { right: 14px; bottom: 16px; width: 38px; height: 38px; } .bx-lightbox { padding: 3.5rem 1rem 1rem; } }
+@media (prefers-reduced-motion: reduce) { .bx-back-top, .bx-lightbox, .bx-reveal-ready { transition: none; } .bx-reveal-ready { opacity: 1; transform: none; } }
