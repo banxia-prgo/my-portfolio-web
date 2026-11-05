@@ -3,13 +3,17 @@ import axios from 'axios'
 let csrfToken: string | undefined
 let csrfRequest: Promise<string> | undefined
 
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.banxia.xin',
+  withCredentials: true,
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
+})
+
 async function getCsrfToken(): Promise<string> {
   if (csrfToken) return csrfToken
   if (!csrfRequest) {
-    csrfRequest = axios.get<{ csrf_token: string }>(
-      (import.meta.env.VITE_API_BASE_URL || 'https://api.banxia.xin') + '/api/auth/csrf',
-      { withCredentials: true, timeout: 15000 },
-    ).then(response => {
+    csrfRequest = api.get<{ csrf_token: string }>('/api/auth/csrf').then(response => {
       const token = response.data.csrf_token
       csrfToken = token
       return token
@@ -17,13 +21,6 @@ async function getCsrfToken(): Promise<string> {
   }
   return csrfRequest
 }
-
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.banxia.xin',
-  withCredentials: true,
-  timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
-})
 
 api.interceptors.request.use(async config => {
   const method = config.method?.toUpperCase()
