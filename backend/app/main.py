@@ -54,7 +54,7 @@ def set_auth_cookies(response: Response, token: str):
 @app.get("/api/auth/csrf")
 def issue_csrf_token(response: Response):
     token = new_csrf_token()
-    response.set_cookie(CSRF_COOKIE, token, httponly=True, secure=settings.cookie_secure, samesite="lax", path="/", max_age=3600)
+    response.set_cookie(CSRF_COOKIE, token, httponly=True, secure=settings.cookie_secure, samesite="lax", path="/", max_age=settings.session_ttl_hours * 3600)
     return {"csrf_token": token}
 
 @app.post("/api/auth/register", response_model=UserOut, status_code=201)
