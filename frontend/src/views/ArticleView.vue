@@ -42,7 +42,7 @@ const rendered = computed(() => {
   if (!entry.value) return ''
   let headingIndex = 0
   const renderer = new MarkdownIt({ html: false, linkify: true, typographer: true })
-  renderer.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
+  renderer.renderer.rules.heading_open = (tokens, idx, options, _env, self) => {
     const heading = headings.value[headingIndex++]
     if (heading) tokens[idx].attrSet('id', heading.id)
     return self.renderToken(tokens, idx, options)
