@@ -5,10 +5,14 @@ import { loadCatalog, type ArticleContent } from '@/api/content'
 
 const projects = ref<ArticleContent[]>([])
 const posts = ref<ArticleContent[]>([])
+const projectCount = ref(0)
+const postCount = ref(0)
 
 onMounted(async () => {
   try {
     const data = await loadCatalog()
+    projectCount.value = data.projects.length
+    postCount.value = data.posts.length
     projects.value = data.projects.slice(0, 1)
     posts.value = data.posts.slice(0, 2)
   } catch (error) {
@@ -154,8 +158,8 @@ onMounted(async () => {
         <section class="bx-stats-card">
           <div class="bx-section__head"><h2><span>▥</span> 数据一览</h2></div>
           <div class="bx-stats-grid">
-            <RouterLink to="/posts/"><strong>✎　{{ posts.length }}</strong><span>原创随笔（首页展示）</span></RouterLink>
-            <RouterLink to="/projects/"><strong>‹/›　{{ projects.length }}</strong><span>精选项目（首页展示）</span></RouterLink>
+            <RouterLink to="/posts/"><strong>✎　{{ postCount }}</strong><span>原创随笔</span></RouterLink>
+            <RouterLink to="/projects/"><strong>‹/›　{{ projectCount }}</strong><span>开源项目</span></RouterLink>
             <div><strong>♧　3</strong><span>学习方向</span></div>
             <div><strong>∞</strong><span>持续成长</span></div>
           </div>
