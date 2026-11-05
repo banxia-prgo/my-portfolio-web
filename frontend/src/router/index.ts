@@ -7,6 +7,7 @@ import ResumeView from '@/views/ResumeView.vue'
 import AuthView from '@/views/AuthView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
+import { api } from '@/api/client'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -16,7 +17,7 @@ const router = createRouter({
     { path: '/posts/', component: ArchiveView },
     { path: '/posts/:slug/', component: ArticleView },
     { path: '/projects/', component: ProjectsView },
-    { path: '/projects/:slug/', component: ArticleView, props: { collection: 'projects' } },
+    { path: '/projects/:slug/', component: ArticleView },
     { path: '/resume/', component: ResumeView },
     { path: '/login/', component: AuthView, props: { mode: 'login' } },
     { path: '/register/', component: AuthView, props: { mode: 'register' } },
@@ -25,10 +26,13 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
-    // The auth store will enforce this after the API session endpoint is connected.
-    return true
+    try {
+      await api.get('/api/users/me')
+    } catch {
+      return { path: '/login/', query: { redirect: to.fullPath } }
+    }
   }
 })
 
