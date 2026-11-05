@@ -8,6 +8,7 @@ from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark
 from .schemas import RegisterIn, LoginIn, UserOut, CommentIn
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
+from .rate_limit import limit_attempts
 
 app = FastAPI(title="半夏小筑 API", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin], allow_credentials=True, allow_methods=["GET","POST","DELETE","OPTIONS"], allow_headers=["Content-Type","X-CSRF-Token"])
@@ -52,7 +53,8 @@ def set_auth_cookies(response: Response, token: str):
     response.set_cookie(CSRF_COOKIE, new_csrf_token(), httponly=False, domain=".banxia.xin", **common)
 
 @app.post("/api/auth/register", response_model=UserOut, status_code=201)
-def register(data: RegisterIn, response: Response, db: Session = Depends(get_db)):
+def register(data: RegisterIn, request: Request, response: Response, db: Session = Depends(get_db)):
+    limit_attempts(request, key="register", maximum=5, window_seconds=3600)
     email = str(data.email).lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=409, detail="该邮箱已注册")
@@ -65,7 +67,8 @@ def register(data: RegisterIn, response: Response, db: Session = Depends(get_db)
     return user
 
 @app.post("/api/auth/login", response_model=UserOut)
-def login(data: LoginIn, response: Response, db: Session = Depends(get_db)):
+def login(data: LoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
+    limit_attempts(request, key="login", maximum=10, window_seconds=900)
     user = db.scalar(select(User).where(User.email == str(data.email).lower()))
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="邮箱或密码错误")
@@ -132,3 +135,19 @@ def activity(request: Request, db: Session = Depends(get_db)):
     bookmarks = db.scalars(select(ArticleBookmark.article_slug).where(ArticleBookmark.user_id==user.id)).all()
     comments = db.scalars(select(Comment).where(Comment.user_id==user.id, Comment.is_deleted.is_(False)).order_by(Comment.created_at.desc()).limit(100)).all()
     return {"likes":likes,"bookmarks":bookmarks,"comments":[{"id":c.id,"article_slug":c.article_slug,"content":c.content,"created_at":c.created_at} for c in comments]}
+
+
+@app.get("/api/articles/{slug}/stats")
+def article_stats(slug: str, request: Request, db: Session = Depends(get_db)):
+    likes = db.scalar(select(func.count()).select_from(ArticleLike).where(ArticleLike.article_slug == slug)) or 0
+    comments = db.scalar(select(func.count()).select_from(Comment).where(Comment.article_slug == slug, Comment.is_deleted.is_(False))) or 0
+    bookmarks = db.scalar(select(func.count()).select_from(ArticleBookmark).where(ArticleBookmark.article_slug == slug)) or 0
+    user_id = None
+    token = request.cookies.get(SESSION_COOKIE)
+    if token:
+        session = db.scalar(select(UserSession).where(UserSession.token_hash == token_digest(token)))
+        if session and session.expires_at > datetime.now(timezone.utc):
+            user_id = session.user_id
+    liked = bool(user_id and db.scalar(select(ArticleLike.id).where(ArticleLike.article_slug == slug, ArticleLike.user_id == user_id)))
+    bookmarked = bool(user_id and db.scalar(select(ArticleBookmark.id).where(ArticleBookmark.article_slug == slug, ArticleBookmark.user_id == user_id)))
+    return {"likes": likes, "comments": comments, "bookmarks": bookmarks, "liked": liked, "bookmarked": bookmarked}
