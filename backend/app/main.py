@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db
 from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark
-from .schemas import RegisterIn, LoginIn, UserOut, CommentIn
+from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
 from .rate_limit import limit_attempts
@@ -96,6 +96,18 @@ def logout(request: Request, response: Response, x_csrf_token: str | None = Head
 @app.get("/api/users/me", response_model=UserOut)
 def me(request: Request, db: Session = Depends(get_db)):
     return current_user(request, db)
+
+@app.patch("/api/users/me", response_model=UserOut)
+def update_profile(data: ProfileUpdate, request: Request, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_csrf(request, x_csrf_token)
+    user = current_user(request, db)
+    nickname = data.nickname.strip()
+    if not nickname:
+        raise HTTPException(status_code=422, detail="昵称不能为空")
+    user.nickname = nickname
+    db.commit()
+    db.refresh(user)
+    return user
 
 @app.post("/api/comments", status_code=201)
 def create_comment(data: CommentIn, request: Request, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
