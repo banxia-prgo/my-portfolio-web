@@ -15,11 +15,22 @@ npm run dev
 ## 构建
 
 ```bash
-npm ci
+npm install
 npm run build
 ```
 
 产物位于 `dist/`。正式切换域名前，必须先完成原 Hugo 内容 Page Bundle 的完整迁移、Vue 路由兼容/重定向、FastAPI 认证与互动接口、Cookie/CSRF/CORS 联调、SEO 元数据和移动端测试。当前 `src/data/site.ts` 仅是开发预览数据，不能当作完整内容迁移结果。
+
+## 导入 Hugo 内容
+
+从仓库根目录安装迁移依赖并运行：
+
+```bash
+python -m pip install -r scripts/requirements-migration.txt
+python scripts/migrate_hugo_content.py
+```
+
+脚本只读取 `content/`，将 Markdown 目录和静态资源复制到 `frontend/public/content/`，不会删除或改写 Hugo 源文件。请人工检查 Hugo Shortcodes、复杂图片链接、front matter 和简历内容。
 
 ## 目标路由
 
