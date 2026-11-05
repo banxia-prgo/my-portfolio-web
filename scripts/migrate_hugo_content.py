@@ -9,6 +9,7 @@ import tomllib
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -58,13 +59,13 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
     for page in sorted(source.rglob("index.md")):
         if any(part.startswith("_") for part in page.relative_to(source).parts):
             continue
-        slug = page.parent.name
+        bundle_slug = page.parent.name
         if page.parent == source:
-            slug = name
+            bundle_slug = name
         meta, body = parse_page(page)
         if meta.get("draft") is True:
             continue
-        asset_target = PUBLIC / name / slug
+        asset_target = PUBLIC / name / bundle_slug
         asset_target.mkdir(parents=True, exist_ok=True)
         for asset in page.parent.iterdir():
             if asset.is_file() and asset.name.lower() != "index.md":
@@ -74,6 +75,7 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
                 if target.exists():
                     shutil.rmtree(target)
                 shutil.copytree(asset, target)
+        slug = str(meta.get("slug") or bundle_slug)
         title = str(meta.get("title") or slug)
         date_value = json_value(meta.get("date") or meta.get("publishDate") or "")
         cover = meta.get("cover") or {}
@@ -87,6 +89,11 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
         categories = meta.get("categories") or []
         if isinstance(categories, str):
             categories = [categories]
+        route_value = str(meta.get("url") or meta.get("permalink") or f"/{name}/{slug}/")
+        if route_value.startswith(("http://", "https://")):
+            route_value = urlsplit(route_value).path or f"/{name}/{slug}/"
+        if not route_value.startswith("/"):
+            route_value = "/" + route_value
         result.append({
             "slug": slug,
             "category": "project" if name == "projects" else "post",
@@ -99,9 +106,9 @@ def migrate_collection(name: str) -> list[dict[str, Any]]:
             "weight": meta.get("weight", 0),
             "featured": bool(meta.get("featured", False)),
             "cover": cover,
-            "content": rewrite_assets(body, name, slug),
-            "permalink": f"/{name}/{slug}/",
-            "href": f"/{name}/{slug}/",
+            "content": rewrite_assets(body, name, bundle_slug),
+            "permalink": route_value,
+            "href": route_value,
             "source": page.relative_to(ROOT).as_posix(),
         })
     return result
