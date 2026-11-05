@@ -10,7 +10,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-默认 API 地址为 `https://api.banxia.xin`，可通过 `VITE_API_BASE_URL` 覆盖。
+本地 `.env.local` 使用 `VITE_API_BASE_URL=/`，由 Vite 将 `/api` 代理到现有 HTTPS API；Cloudflare Pages 生产环境变量设置为 `VITE_API_BASE_URL=https://api.banxia.xin`。
 
 ## 构建
 
