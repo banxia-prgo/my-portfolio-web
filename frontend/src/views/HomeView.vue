@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { loadCatalog, type ArticleContent } from '@/api/content'
 
@@ -7,6 +7,7 @@ const projects = ref<ArticleContent[]>([])
 const posts = ref<ArticleContent[]>([])
 const projectCount = ref(0)
 const postCount = ref(0)
+const featuredProject = computed(() => projects.value[0])
 
 onMounted(async () => {
   try {
@@ -64,8 +65,8 @@ onMounted(async () => {
             <RouterLink to="/projects/">查看全部 →</RouterLink>
           </div>
           <div class="bx-project-grid">
-            <article v-if="projects.length" class="bx-project-card">
-              <RouterLink class="bx-project-card__visual bx-project-card__visual--browser" :to="projects[0].href">
+            <article v-if="featuredProject" class="bx-project-card">
+              <RouterLink class="bx-project-card__visual bx-project-card__visual--browser" :to="featuredProject.href">
                 <div class="bx-browser-mock">
                   <div class="bx-browser-mock__bar"><i></i><i></i><i></i><span>图片浏览器</span></div>
                   <div class="bx-browser-mock__body">
@@ -76,12 +77,12 @@ onMounted(async () => {
                 </div>
               </RouterLink>
               <div class="bx-project-card__body">
-                <h3><RouterLink :to="projects[0].href">{{ projects[0].title }}</RouterLink><span class="bx-tag-hot">推荐</span></h3>
-                <p>{{ projects[0].summary }}</p>
+                <h3><RouterLink :to="featuredProject.href">{{ featuredProject.title }}</RouterLink><span class="bx-tag-hot">推荐</span></h3>
+                <p>{{ featuredProject.summary }}</p>
                 <div class="bx-project-tags"><span>C++</span><span>Qt</span><span>图像处理</span></div>
                 <div class="bx-project-card__foot">
                   <a href="https://github.com/banxia-prgo/picture_browser" target="_blank" rel="noopener">◉ GitHub</a>
-                  <RouterLink :to="projects[0].href">项目详情 →</RouterLink>
+                  <RouterLink :to="featuredProject.href">项目详情 →</RouterLink>
                 </div>
               </div>
             </article>
