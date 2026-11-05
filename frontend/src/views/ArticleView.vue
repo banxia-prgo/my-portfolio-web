@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
 import { loadCatalog, type ArticleContent } from '@/api/content'
@@ -35,6 +35,9 @@ const headings = computed(() => {
   }
   return result
 })
+let tocObserver: IntersectionObserver | null = null
+let tocCleanup: (() => void) | null = null
+
 const rendered = computed(() => {
   if (!entry.value) return ''
   const tokens = markdown.parse(entry.value.content || '', {})
@@ -52,6 +55,8 @@ onMounted(async () => {
   const data = await loadCatalog()
   const list = kind === 'project' ? data.projects : data.posts
   entry.value = list.find(item => item.slug === String(route.params.slug)) || null
+  await nextTick()
+  initTableOfContents()
   if (kind === 'post') {
     try {
       const response = await api.get('/api/articles/' + String(route.params.slug) + '/comments')
@@ -61,6 +66,116 @@ onMounted(async () => {
     }
   }
 })
+
+
+function initTableOfContents() {
+  const toc = document.querySelector<HTMLElement>('.post-single .toc')
+  const content = document.querySelector<HTMLElement>('.post-single .post-content')
+  if (!toc || !content) return
+
+  const links = Array.from(toc.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'))
+  const targets = links.map(link => {
+    const id = decodeURIComponent(link.getAttribute('href')!.slice(1))
+    return document.getElementById(id)
+  }).filter((item): item is HTMLElement => Boolean(item))
+  if (!targets.length) return
+
+  const setActive = (heading: HTMLElement) => {
+    links.forEach(link => {
+      const id = decodeURIComponent(link.getAttribute('href')!.slice(1))
+      const active = id === heading.id
+      link.classList.toggle('toc-active', active)
+      const item = link.closest('li')
+      item?.classList.toggle('toc-active-item', active)
+      if (active && item) {
+        const tocBox = toc.getBoundingClientRect()
+        const itemBox = item.getBoundingClientRect()
+        if (itemBox.top < tocBox.top || itemBox.bottom > tocBox.bottom) {
+          item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+        }
+      }
+    })
+  }
+
+  tocObserver = new IntersectionObserver(entries => {
+    const visible = entries
+      .filter(item => item.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+    if (visible.length) {
+      setActive(visible[0].target as HTMLElement)
+    } else {
+      const passed = targets.filter(item => item.getBoundingClientRect().top <= 140)
+      setActive(passed[passed.length - 1] || targets[0])
+    }
+  }, { rootMargin: '-110px 0px -65% 0px', threshold: [0, 1] })
+
+  targets.forEach(target => tocObserver?.observe(target))
+  setActive(targets[0])
+
+  const desktop = window.matchMedia('(min-width: 1451px)')
+  let handle: HTMLSpanElement | null = null
+  let dragging = false
+  const root = document.documentElement
+  const onMove = (event: PointerEvent) => {
+    if (!dragging) return
+    const width = Math.max(180, Math.min(380, event.clientX - toc.getBoundingClientRect().left))
+    root.style.setProperty('--toc-sidebar-width', width + 'px')
+    root.style.setProperty('--toc-sidebar-gap', '40px')
+    handle?.setAttribute('aria-valuenow', String(Math.round(width)))
+  }
+  const stopDragging = () => {
+    dragging = false
+    handle?.classList.remove('is-dragging')
+    document.body.classList.remove('toc-is-resizing')
+    document.removeEventListener('pointermove', onMove)
+    document.removeEventListener('pointerup', stopDragging)
+  }
+  const addHandle = () => {
+    if (!desktop.matches || handle) return
+    handle = document.createElement('span')
+    handle.className = 'toc-resize-handle'
+    handle.setAttribute('role', 'separator')
+    handle.setAttribute('aria-label', '调整目录宽度')
+    handle.setAttribute('aria-orientation', 'vertical')
+    handle.tabIndex = 0
+    handle.addEventListener('pointerdown', event => {
+      if (!desktop.matches) return
+      dragging = true
+      handle?.classList.add('is-dragging')
+      document.body.classList.add('toc-is-resizing')
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup', stopDragging)
+      event.preventDefault()
+    })
+    handle.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      const current = parseFloat(getComputedStyle(root).getPropertyValue('--toc-sidebar-width')) || 220
+      const width = Math.max(180, Math.min(380, current + (event.key === 'ArrowRight' ? 10 : -10)))
+      root.style.setProperty('--toc-sidebar-width', width + 'px')
+      event.preventDefault()
+    })
+    toc.appendChild(handle)
+  }
+  addHandle()
+  const onMediaChange = () => addHandle()
+  desktop.addEventListener?.('change', onMediaChange)
+
+  links.forEach(link => link.addEventListener('click', () => {
+    const id = decodeURIComponent(link.getAttribute('href')!.slice(1))
+    const heading = document.getElementById(id)
+    if (heading) setActive(heading)
+  }))
+
+  tocCleanup = () => {
+    tocObserver?.disconnect()
+    tocObserver = null
+    stopDragging()
+    desktop.removeEventListener?.('change', onMediaChange)
+    handle?.remove()
+  }
+}
+
+onBeforeUnmount(() => tocCleanup?.())
 
 async function action(type: 'likes' | 'bookmarks') {
   try {
