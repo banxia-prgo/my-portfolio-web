@@ -9,7 +9,7 @@ const entry=ref<ArticleContent|null>(null),liked=ref(false),saved=ref(false),com
 const comments=ref<Array<{id:number;content:string;nickname:string;created_at:string}>>([])
 const markdown=new MarkdownIt({html:false,linkify:true,typographer:true})
 const rendered=computed(()=>entry.value?markdown.render(entry.value.content||''): '')
-onMounted(async()=>{const data=await loadCatalog();const list=kind==='project'?data.projects:data.posts;entry.value=list.find(e=>e.slug===route.params.slug)||null;try{const r=await api.get('/api/articles/'+String(route.params.slug)+'/comments');comments.value=r.data}catch{/* comments endpoint may not be deployed yet */}})
+onMounted(async()=>{const data=await loadCatalog();const list=kind==='project'?data.projects:data.posts;entry.value=list.find(e=>e.slug===String(route.params.slug))||null;try{const r=await api.get('/api/articles/'+String(route.params.slug)+'/comments');comments.value=r.data}catch{/* comments endpoint may not be deployed yet */}})
 async function action(type:'likes'|'bookmarks'){try{const r=await api.post('/api/articles/'+String(route.params.slug)+'/'+type);if(type==='likes')liked.value=r.data.active;else saved.value=r.data.active}catch{notice.value='请先登录，或稍后重试。'}}
 async function submit(){if(!comment.value.trim())return;try{await api.post('/api/comments',{article_slug:route.params.slug,content:comment.value});comment.value='';notice.value='评论已提交';const r=await api.get('/api/articles/'+String(route.params.slug)+'/comments');comments.value=r.data}catch(e){notice.value=e instanceof Error?e.message:'请先登录后发表评论。'}}
 </script>
