@@ -34,7 +34,8 @@ class Comment(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
     user = relationship("User")
-    replies = relationship("Comment", cascade="all, delete-orphan")
+    parent = relationship("Comment", remote_side="Comment.id", foreign_keys=[parent_id], back_populates="replies")
+    replies = relationship("Comment", foreign_keys=[parent_id], back_populates="parent", cascade="all, delete-orphan", single_parent=True)
 
 class ArticleLike(Base):
     __tablename__ = "article_likes"
