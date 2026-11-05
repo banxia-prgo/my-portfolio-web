@@ -45,4 +45,7 @@ class ProfileUpdate(BaseModel):
     @field_validator("nickname")
     @classmethod
     def normalize_nickname(cls, value: str) -> str:
-        return value.strip()
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("昵称不能为空")
+        return normalized
