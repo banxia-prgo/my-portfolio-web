@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from .settings import settings
 
-engine = create_engine(settings.database_url, pool_pre_ping=True, pool_size=5, max_overflow=2, pool_timeout=20)
+engine = create_engine(settings.sqlalchemy_database_url, pool_pre_ping=True, pool_size=5, max_overflow=2, pool_timeout=20)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 class Base(DeclarativeBase):
