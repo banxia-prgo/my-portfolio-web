@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { entries } from '@/data/site'
+import {onMounted,ref} from 'vue'
+import {loadCatalog,type ArticleContent} from '@/api/content'
 import EntryCard from '@/components/EntryCard.vue'
-const projects=entries.filter(e=>e.category==='project')
-const posts=entries.filter(e=>e.category==='post')
+const projects=ref<ArticleContent[]>([]),posts=ref<ArticleContent[]>([])
+onMounted(async()=>{const data=await loadCatalog();projects.value=data.projects.slice(0,2);posts.value=data.posts.slice(0,2)})
 </script>
 <template><div class="page-wrap home"><section class="hero"><div><span class="eyebrow">PERSONAL SPACE / 2026</span><h1>让代码有迹可循，<br><em>让思绪自由生长。</em></h1><p>你好，我是半夏。这里收纳技术实践、项目探索，以及那些值得记录的思考。</p><div class="actions"><RouterLink to="/posts/" class="primary">阅读随笔 ↗</RouterLink><RouterLink to="/projects/" class="secondary">探索项目</RouterLink></div></div><div class="art"><div class="orbit"></div><div class="core">半<small>BAN XIA</small></div><span class="note">IDEAS IN MOTION</span></div><span class="scroll">↓ SCROLL TO EXPLORE</span></section><section class="intro"><div><span class="eyebrow">A LITTLE ABOUT THIS SPACE</span><h2>记录不是终点，<br>而是下一次出发的起点。</h2></div><p>从 C++、计算机视觉到工业软件，从一个想法到可以运行的作品。把学习过程沉淀下来，也把每一次试错变成经验。</p></section><section class="content"><div class="heading"><div><span class="eyebrow">SELECTED WORKS / 01</span><h2>近期项目</h2></div><RouterLink to="/projects/">全部项目 ↗</RouterLink></div><div class="grid"><EntryCard v-for="(e,i) in projects" :key="e.slug" :entry="e" :index="i"/></div></section><section class="content journal"><div class="heading"><div><span class="eyebrow">NOTES & THOUGHTS / 02</span><h2>技术随笔</h2></div><RouterLink to="/posts/">浏览归档 ↗</RouterLink></div><div class="grid"><EntryCard v-for="(e,i) in posts" :key="e.slug" :entry="e" :index="i"/></div></section><section class="closing"><span class="eyebrow">KEEP MAKING THINGS</span><p>每一次认真构建，<em>都在靠近想成为的自己。</em></p><RouterLink to="/resume/">认识更多关于我 ↗</RouterLink></section></div></template>
 <style scoped>
