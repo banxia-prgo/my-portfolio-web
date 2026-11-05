@@ -50,7 +50,12 @@ def set_auth_cookies(response: Response, token: str):
     max_age = settings.session_ttl_hours * 3600
     common = {"secure": settings.cookie_secure, "samesite":"lax", "path":"/", "max_age":max_age}
     response.set_cookie(SESSION_COOKIE, token, httponly=True, **common)
-    response.set_cookie(CSRF_COOKIE, new_csrf_token(), httponly=False, domain=".banxia.xin", **common)
+
+@app.get("/api/auth/csrf")
+def issue_csrf_token(response: Response):
+    token = new_csrf_token()
+    response.set_cookie(CSRF_COOKIE, token, httponly=True, secure=settings.cookie_secure, samesite="lax", path="/", max_age=3600)
+    return {"csrf_token": token}
 
 @app.post("/api/auth/register", response_model=UserOut, status_code=201)
 def register(data: RegisterIn, request: Request, response: Response, db: Session = Depends(get_db)):
@@ -85,7 +90,7 @@ def logout(request: Request, response: Response, x_csrf_token: str | None = Head
         session = db.scalar(select(UserSession).where(UserSession.token_hash == token_digest(token)))
         if session: db.delete(session); db.commit()
     response.delete_cookie(SESSION_COOKIE, path="/")
-    response.delete_cookie(CSRF_COOKIE, path="/", domain=".banxia.xin")
+    response.delete_cookie(CSRF_COOKIE, path="/")
     return {"ok":True}
 
 @app.get("/api/users/me", response_model=UserOut)
