@@ -40,7 +40,6 @@ let tocCleanup: (() => void) | null = null
 
 const rendered = computed(() => {
   if (!entry.value) return ''
-  const tokens = markdown.parse(entry.value.content || '', {})
   let headingIndex = 0
   const renderer = new MarkdownIt({ html: false, linkify: true, typographer: true })
   renderer.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
