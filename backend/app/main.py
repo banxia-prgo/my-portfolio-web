@@ -58,7 +58,8 @@ def issue_csrf_token(response: Response):
     return {"csrf_token": token}
 
 @app.post("/api/auth/register", response_model=UserOut, status_code=201)
-def register(data: RegisterIn, request: Request, response: Response, db: Session = Depends(get_db)):
+def register(data: RegisterIn, request: Request, response: Response, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_csrf(request, x_csrf_token)
     limit_attempts(request, key="register", maximum=5, window_seconds=3600)
     email = str(data.email).lower()
     if db.scalar(select(User).where(User.email == email)):
@@ -72,7 +73,8 @@ def register(data: RegisterIn, request: Request, response: Response, db: Session
     return user
 
 @app.post("/api/auth/login", response_model=UserOut)
-def login(data: LoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
+def login(data: LoginIn, request: Request, response: Response, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_csrf(request, x_csrf_token)
     limit_attempts(request, key="login", maximum=10, window_seconds=900)
     user = db.scalar(select(User).where(User.email == str(data.email).lower()))
     if not user or not verify_password(data.password, user.password_hash):
