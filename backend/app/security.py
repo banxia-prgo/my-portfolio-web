@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
@@ -16,7 +17,7 @@ def new_session_token() -> str:
     return secrets.token_urlsafe(48)
 
 def token_digest(token: str) -> str:
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    return hmac.new(settings.secret_key.encode("utf-8"), token.encode("utf-8"), hashlib.sha256).hexdigest()
 
 def session_expiry() -> datetime:
     return datetime.now(timezone.utc) + timedelta(hours=settings.session_ttl_hours)
