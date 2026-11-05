@@ -1,8 +1,20 @@
 import axios from 'axios'
 
-function csrfCookie(): string | undefined {
-  const match = document.cookie.match(/(?:^|; )bx_csrf=([^;]*)/)
-  return match ? decodeURIComponent(match[1]) : undefined
+let csrfToken: string | undefined
+let csrfRequest: Promise<string> | undefined
+
+async function getCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken
+  if (!csrfRequest) {
+    csrfRequest = axios.get<{ csrf_token: string }>(
+      (import.meta.env.VITE_API_BASE_URL || 'https://api.banxia.xin') + '/api/auth/csrf',
+      { withCredentials: true, timeout: 15000 },
+    ).then(response => {
+      csrfToken = response.data.csrf_token
+      return csrfToken
+    }).finally(() => { csrfRequest = undefined })
+  }
+  return csrfRequest
 }
 
 export const api = axios.create({
@@ -12,11 +24,11 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-api.interceptors.request.use(config => {
+api.interceptors.request.use(async config => {
   const method = config.method?.toUpperCase()
   if (method && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    const token = csrfCookie()
-    if (token) config.headers.set('X-CSRF-Token', token)
+    const token = await getCsrfToken()
+    config.headers.set('X-CSRF-Token', token)
   }
   return config
 })
