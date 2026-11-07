@@ -2,6 +2,12 @@
 name: Deploy Vue frontend to Alibaba Cloud
 
 on:
+  # 推送到迁移分支时自动构建
+  push:
+    branches:
+      - vue-migration
+
+  # 保留手动部署入口，未来工作流进入默认分支后使用
   workflow_dispatch:
     inputs:
       confirm_deploy:
@@ -21,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 第一阶段：只构建，不连接服务器
+  # 第一阶段：构建前端，不连接服务器
   build:
     name: Build Vue frontend
     runs-on: ubuntu-latest
@@ -60,7 +66,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # 第二阶段：只有明确选择 yes 才允许部署
+  # 第二阶段：仅在手动选择 yes 且来自迁移分支时部署
   deploy:
     name: Deploy frontend
     runs-on: ubuntu-latest
