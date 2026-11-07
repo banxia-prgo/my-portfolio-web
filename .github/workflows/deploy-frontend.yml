@@ -1,0 +1,119 @@
+
+name: Deploy Vue frontend to Alibaba Cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: "确认部署？备案通过并准备正式发布时选择 yes"
+        required: true
+        type: choice
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: banxia-frontend-production
+  cancel-in-progress: false
+
+jobs:
+  # 第一阶段：只构建，不连接服务器
+  build:
+    name: Build Vue frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Vue frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: https://api.banxia.xin
+        run: npm run build
+
+      - name: Package frontend
+        run: |
+          tar -czf "$RUNNER_TEMP/frontend-dist.tar.gz" \
+            -C frontend/dist .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/frontend-dist.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  # 第二阶段：只有明确选择 yes 才允许部署
+  deploy:
+    name: Deploy frontend
+    runs-on: ubuntu-latest
+    needs: build
+
+    if: github.ref == 'refs/heads/vue-migration' && inputs.confirm_deploy == 'yes'
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Upload and deploy
+        env:
+          DEPLOY_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          SSH_OPTIONS=(
+            -i "$HOME/.ssh/id_ed25519"
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+          )
+
+          ssh "${SSH_OPTIONS[@]}" deploy@39.106.112.12 \
+            "mkdir -p /home/deploy/incoming"
+
+          scp "${SSH_OPTIONS[@]}" \
+            "$RUNNER_TEMP/frontend-dist.tar.gz" \
+            "deploy@39.106.112.12:/home/deploy/incoming/frontend-${DEPLOY_ID}.tar.gz"
+
+          ssh "${SSH_OPTIONS[@]}" deploy@39.106.112.12 \
+            "bash -s -- ${DEPLOY_ID}" \
+            < scripts/deploy-frontend.sh
