@@ -1,0 +1,59 @@
+name: Vue migration CI
+
+on:
+  push:
+    branches: [vue-migration]
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "scripts/**"
+      - ".github/workflows/vue-migration-ci.yml"
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: banxia
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: banxia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U banxia -d banxia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+psycopg://banxia:ci-password@localhost:5432/banxia
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      FRONTEND_ORIGIN: https://www.banxia.xin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q app alembic
+      - run: alembic upgrade head
+      - run: python -c "from app.main import app; print(app.title)"
