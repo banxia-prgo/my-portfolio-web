@@ -11,7 +11,7 @@ onMounted(async () => {
   try {
     posts.value = (await loadCatalog()).posts
   } catch (error) {
-    console.error('加载随笔归档失败', error)
+    console.error('加载文章归档失败', error)
   }
 })
 
@@ -34,11 +34,11 @@ const filtered = computed(() => {
   <div class="archive-page">
     <header class="archive-header">
       <p class="banxia-kicker">NOTES / THOUGHTS / LEARNING</p>
-      <h1>技术随笔</h1>
+      <h1>文章</h1>
       <p class="archive-description">记录编程学习、问题排查与项目实践中的思考。<br>让每一次学习，都成为下一次动手的起点。</p>
     </header>
 
-    <section class="archive-toolbar" aria-label="随笔筛选">
+    <section class="archive-toolbar" aria-label="文章筛选">
       <label class="archive-search">
         <span aria-hidden="true">⌕</span>
         <input v-model="query" type="search" placeholder="搜索标题、摘要或标签">
@@ -65,7 +65,7 @@ const filtered = computed(() => {
     </div>
 
     <div class="archive-results">
-      <span>随笔归档</span>
+      <span>文章归档</span>
       <span>显示 {{ filtered.length }} / {{ posts.length }} 篇</span>
     </div>
 
@@ -81,7 +81,7 @@ const filtered = computed(() => {
           <RouterLink :to="post.href" class="read-more">阅读全文 <span aria-hidden="true">↗</span></RouterLink>
         </footer>
       </article>
-      <div v-if="!filtered.length" class="archive-empty">没有找到匹配的随笔，试试其他关键词或标签。</div>
+      <div v-if="!filtered.length" class="archive-empty">没有找到匹配的文章，试试其他关键词或标签。</div>
     </section>
   </div>
 </template>
