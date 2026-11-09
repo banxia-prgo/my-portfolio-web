@@ -134,7 +134,7 @@ onMounted(async () => {
               </span>
               <span class="bx-note__arrow">→</span>
             </RouterLink>
-            <p v-if="!posts.length" class="bx-empty">随笔正在整理中。</p>
+            <p v-if="!posts.length" class="bx-empty">文章正在整理中。</p>
           </div>
         </section>
       </div>
@@ -146,11 +146,11 @@ onMounted(async () => {
           <p class="bx-about-card__intro">目前专注于计算机视觉、深度学习和工程实践，持续学习，记录成长。</p>
           <div class="bx-about-item"><span>♧</span><div><strong>学习方向</strong><p>机器视觉 · 深度学习 · 工程落地</p></div></div>
           <div class="bx-about-item"><span>♧</span><div><strong>联系方式</strong><p><a href="mailto:dhq1015@gmail.com">dhq1015@gmail.com</a></p></div></div>
-          <RouterLink class="bx-about-link" to="/resume/">了解更多关于我 →</RouterLink>
+          <RouterLink class="bx-about-link" to="/about/">了解更多关于我 →</RouterLink>
         </section>
 
         <section class="bx-learning-card">
-          <div class="bx-section__head"><h2><span>◎</span> 我的学习方向</h2><RouterLink to="/resume/">更多内容 →</RouterLink></div>
+          <div class="bx-section__head"><h2><span>◎</span> 我的学习方向</h2><RouterLink to="/about/">更多内容 →</RouterLink></div>
           <div class="bx-learning-step"><span>01</span><div><strong>机器视觉</strong><p>OpenCV · 图像处理 · 目标检测</p></div><small>进行中</small></div>
           <div class="bx-learning-step"><span>02</span><div><strong>深度学习</strong><p>PyTorch · 模型训练 · 项目实践</p></div></div>
           <div class="bx-learning-step"><span>03</span><div><strong>工程实践</strong><p>系统设计 · 项目部署 · 代码规范</p></div></div>
