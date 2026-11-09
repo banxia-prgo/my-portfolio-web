@@ -4,7 +4,7 @@ on:
   push:
     branches: [vue-migration]
   pull_request:
-    branches: [main]
+    branches: [main, vue-migration]
     paths:
       - "content/**"
       - "static/**"
