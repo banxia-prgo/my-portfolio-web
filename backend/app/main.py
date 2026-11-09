@@ -115,7 +115,7 @@ def update_profile(data: ProfileUpdate, request: Request, x_csrf_token: str | No
     user.nickname = nickname
     db.commit()
     db.refresh(user)
-    return user
+    return public_user_payload(user)
 
 @app.post("/api/comments", status_code=201)
 def create_comment(data: CommentIn, request: Request, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
