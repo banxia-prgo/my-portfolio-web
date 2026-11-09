@@ -681,3 +681,54 @@ def admin_media_list(
         }
         for item in items
     ]
+
+
+@app.get("/api/admin/guestbook")
+def admin_guestbook_messages(request: Request, include_deleted: bool = False, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    query = select(GuestbookMessage, User).join(User)
+    if not include_deleted:
+        query = query.where(GuestbookMessage.is_deleted.is_(False))
+    rows = db.execute(query.order_by(GuestbookMessage.created_at.desc()).limit(500)).all()
+    return [{"id": item.id, "content": item.content, "nickname": user.nickname,
+             "created_at": item.created_at, "is_deleted": item.is_deleted} for item, user in rows]
+
+
+@app.get("/api/admin/comments")
+def admin_comments(request: Request, include_deleted: bool = False, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    query = select(Comment, User).join(User)
+    if not include_deleted:
+        query = query.where(Comment.is_deleted.is_(False))
+    rows = db.execute(query.order_by(Comment.created_at.desc()).limit(500)).all()
+    return [{"id": item.id, "content": item.content, "nickname": user.nickname,
+             "article_slug": item.article_slug, "parent_id": item.parent_id,
+             "created_at": item.created_at, "is_deleted": item.is_deleted} for item, user in rows]
+
+
+@app.post("/api/admin/guestbook/{message_id}/restore")
+def admin_restore_guestbook_message(message_id: int, request: Request,
+    x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = db.get(GuestbookMessage, message_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="留言不存在")
+    item.is_deleted = False
+    write_audit_log(db, actor, "guestbook.restore", "guestbook_message", item.id)
+    db.commit()
+    return {"ok": True}
+
+
+@app.post("/api/admin/comments/{comment_id}/restore")
+def admin_restore_comment(comment_id: int, request: Request,
+    x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = db.get(Comment, comment_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="评论不存在")
+    item.is_deleted = False
+    write_audit_log(db, actor, "comment.restore", "comment", item.id)
+    db.commit()
+    return {"ok": True}
