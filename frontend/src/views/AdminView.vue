@@ -1,269 +1,66 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { api } from '@/api/client'
-
-type Tab = 'overview' | 'content' | 'users' | 'audit' | 'settings'
-type ContentKind = 'post' | 'project'
-interface ContentRow {
-  id: number
-  kind: ContentKind
-  slug: string
-  title: string
-  summary: string
-  content: string
-  status: 'draft' | 'published' | 'archived'
-  featured: boolean
-  sort_order: number
-  cover_url: string | null
-  github_url: string | null
-}
-interface UserRow {
-  id: number
-  email: string
-  nickname: string
-  role: string
-  is_active: boolean
-  created_at: string
-}
-interface Overview {
-  users: number
-  active_users: number
-  comments: number
-  guestbook_messages: number
-}
-
-const tab = ref<Tab>('overview')
-const loading = ref(false)
-const message = ref('')
-const overview = ref<Overview>({ users: 0, active_users: 0, comments: 0, guestbook_messages: 0 })
-const users = ref<UserRow[]>([])
-const contentItems = ref<ContentRow[]>([])
-const auditLogs = ref<Record<string, unknown>[]>([])
-const editingId = ref<number | null>(null)
-const editorOpen = ref(false)
-const draft = reactive({
-  kind: 'post' as ContentKind,
-  slug: '',
-  title: '',
-  summary: '',
-  content: '',
-  status: 'draft' as ContentRow['status'],
-  featured: false,
-  sort_order: 0,
-  cover_url: '',
-  github_url: '',
-})
-const siteProfile = ref('')
-
-function resetDraft() {
-  editingId.value = null
-  Object.assign(draft, {
-    kind: 'post', slug: '', title: '', summary: '', content: '',
-    status: 'draft', featured: false, sort_order: 0, cover_url: '', github_url: '',
-  })
-}
-
-async function loadOverview() {
-  const response = await api.get<Overview>('/api/admin/overview')
-  overview.value = response.data
-}
-async function loadUsers() {
-  const response = await api.get<{ items: UserRow[] }>('/api/admin/users')
-  users.value = response.data.items
-}
-async function loadContent() {
-  const response = await api.get<ContentRow[]>('/api/admin/content')
-  contentItems.value = response.data
-}
-async function loadAudit() {
-  const response = await api.get<Record<string, unknown>[]>('/api/admin/audit-logs')
-  auditLogs.value = response.data
-}
-async function loadSettings() {
-  const response = await api.get<Record<string, unknown>>('/api/site/profile')
-  siteProfile.value = JSON.stringify(response.data, null, 2)
-}
-async function refreshAll() {
-  loading.value = true
-  message.value = ''
-  try {
-    await Promise.all([loadOverview(), loadUsers(), loadContent(), loadAudit()])
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : '加载后台数据失败'
-  } finally {
-    loading.value = false
-  }
-}
-function editContent(item: ContentRow) {
-  editingId.value = item.id
-  Object.assign(draft, {
-    kind: item.kind, slug: item.slug, title: item.title, summary: item.summary,
-    content: item.content, status: item.status, featured: item.featured,
-    sort_order: item.sort_order, cover_url: item.cover_url || '', github_url: item.github_url || '',
-  })
-  editorOpen.value = true
-}
-async function saveContent() {
-  message.value = ''
-  const payload = { ...draft, cover_url: draft.cover_url || null, github_url: draft.github_url || null }
-  try {
-    if (editingId.value) await api.patch(`/api/admin/content/${editingId.value}`, payload)
-    else await api.post('/api/admin/content', payload)
-    editorOpen.value = false
-    resetDraft()
-    await loadContent()
-    message.value = '内容已保存'
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : '保存失败'
-  }
-}
-async function deleteContent(item: ContentRow) {
-  if (!window.confirm(`确定删除「${item.title}」吗？`)) return
-  try {
-    await api.delete(`/api/admin/content/${item.id}`)
-    await loadContent()
-    message.value = '内容已删除'
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : '删除失败'
-  }
-}
-async function toggleUser(user: UserRow) {
-  try {
-    await api.patch(`/api/admin/users/${user.id}`, { is_active: !user.is_active })
-    await loadUsers()
-    message.value = '用户状态已更新'
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : '更新失败'
-  }
-}
-async function saveProfile() {
-  try {
-    const value = JSON.parse(siteProfile.value) as Record<string, unknown>
-    await api.put('/api/admin/site-settings/profile', { value })
-    message.value = '关于我资料已保存'
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : 'JSON 格式不正确或保存失败'
-  }
-}
-
-onMounted(() => { void refreshAll() })
+type Tab='overview'|'content'|'guestbook'|'comments'|'profile'|'users'|'audit'
+interface Content {id:number;kind:'post'|'project';slug:string;title:string;summary:string;content:string;status:'draft'|'published'|'archived';featured:boolean;sort_order:number;cover_url:string|null;github_url:string|null;updated_at:string}
+interface Entry {id:number;content:string;nickname:string;created_at:string;is_deleted:boolean;article_slug?:string}
+const nav:{id:Tab;label:string}[]=[{id:'overview',label:'工作台'},{id:'content',label:'文章与项目'},{id:'guestbook',label:'留言管理'},{id:'comments',label:'评论管理'},{id:'profile',label:'关于我'},{id:'users',label:'用户管理'},{id:'audit',label:'操作日志'}]
+const tab=ref<Tab>('overview'),loading=ref(false),busy=ref(false),notice=ref(''),error=ref('')
+const stats=ref({users:0,active_users:0,comments:0,guestbook_messages:0})
+const contents=ref<Content[]>([]),messages=ref<Entry[]>([]),comments=ref<Entry[]>([]),users=ref<any[]>([]),logs=ref<any[]>([])
+const filter=reactive({kind:'',status:'',keyword:''}),includeDeleted=ref(false),keyword=ref('')
+const filtered=computed(()=>contents.value.filter(x=>(!filter.kind||x.kind===filter.kind)&&(!filter.status||x.status===filter.status)&&(!filter.keyword||[x.title,x.slug].join(' ').toLowerCase().includes(filter.keyword.toLowerCase()))))
+const editor=ref(false),editId=ref<number|null>(null)
+const draft=reactive({kind:'post' as 'post'|'project',slug:'',title:'',summary:'',content:'',status:'draft' as 'draft'|'published'|'archived',featured:false,sort_order:0,cover_url:'',github_url:''})
+const profile=reactive({name:'半夏',headline:'一名热爱技术、喜欢动手实践的开发者。',bio:'以代码记录成长，以思考探索世界。在技术与生活之间，保持好奇，持续前行。',email:'dhq1015@gmail.com',github_url:'https://github.com/banxia-prgo',avatar_url:'',intro_title:'持续探索的方向',note_title:'关于这里',note_paragraphs:'「半夏小筑」是我的个人数字空间。这里记录技术学习中的问题与解法，收纳亲手完成的项目，也留下一些关于成长和生活的思考。\n如果你对某篇文章或某个项目有想法，欢迎到留言板交流。',directions:[
+{title:'机器视觉',eyebrow:'01 / VISION',description:'围绕 OpenCV、图像处理、目标检测与工业视觉应用，积累可运行、可复现的实践经验。',tags:'OpenCV · C++ · Qt'},
+{title:'深度学习',eyebrow:'02 / AI',description:'学习神经网络、图像分类与目标检测，尝试从数据准备、模型训练走向实际应用。',tags:'Python · PyTorch · YOLO'},
+{title:'工程实践',eyebrow:'03 / ENGINEERING',description:'关注软件架构、开发工具链、Linux 环境与项目部署，让想法成为稳定可用的作品。',tags:'Git · Linux · Docker'}] as Array<{title:string;eyebrow:string;description:string;tags:string}>})
+function msg(s:string,bad=false){notice.value=bad?'':s;error.value=bad?s:''}
+async function refresh(){loading.value=true;try{const [s,c,u,l]=await Promise.all([api.get('/api/admin/overview'),api.get<Content[]>('/api/admin/content?limit=100'),api.get('/api/admin/users?limit=100'),api.get('/api/admin/audit-logs?limit=100')]);stats.value=s.data;contents.value=c.data;users.value=u.data.items;logs.value=l.data;await Promise.all([loadMessages(),loadComments()])}catch(e){msg(e instanceof Error?e.message:'加载失败',true)}finally{loading.value=false}}
+async function loadMessages(){messages.value=(await api.get<Entry[]>('/api/admin/guestbook?include_deleted='+includeDeleted.value)).data}
+async function loadComments(){comments.value=(await api.get<Entry[]>('/api/admin/comments?include_deleted='+includeDeleted.value)).data}
+async function loadProfile(){try{const d=(await api.get<Record<string,any>>('/api/site/profile')).data;if(d&&Object.keys(d).length)Object.assign(profile,{...d,note_paragraphs:Array.isArray(d.note_paragraphs)?d.note_paragraphs.join('\n'):profile.note_paragraphs,directions:Array.isArray(d.directions)?d.directions.map((x:any)=>({...x,tags:Array.isArray(x.tags)?x.tags.join(' · '):x.tags||''})):profile.directions})}catch(e){msg(e instanceof Error?e.message:'资料加载失败',true)}}
+async function go(t:Tab){tab.value=t;if(t==='profile')await loadProfile();if(t==='guestbook')await loadMessages();if(t==='comments')await loadComments()}
+function reset(){editId.value=null;Object.assign(draft,{kind:'post',slug:'',title:'',summary:'',content:'',status:'draft',featured:false,sort_order:0,cover_url:'',github_url:''})}
+function edit(x:Content){editId.value=x.id;Object.assign(draft,{...x,cover_url:x.cover_url||'',github_url:x.github_url||''});editor.value=true}
+async function saveContent(){busy.value=true;try{const data={...draft,cover_url:draft.cover_url||null,github_url:draft.github_url||null};if(editId.value)await api.patch('/api/admin/content/'+editId.value,data);else await api.post('/api/admin/content',data);editor.value=false;reset();await refresh();msg('内容已保存')}catch(e){msg(e instanceof Error?e.message:'保存失败',true)}finally{busy.value=false}}
+async function quickSave(x:Content){try{await api.patch('/api/admin/content/'+x.id,{title:x.title,status:x.status,sort_order:x.sort_order,featured:x.featured});msg('表格修改已保存')}catch(e){msg(e instanceof Error?e.message:'保存失败',true)}}
+async function removeContent(x:Content){if(!confirm('确定永久删除「'+x.title+'」？'))return;try{await api.delete('/api/admin/content/'+x.id);await refresh();msg('内容已删除')}catch(e){msg(e instanceof Error?e.message:'删除失败',true)}}
+async function moderate(x:Entry,type:'guestbook'|'comments',restore=false){if(!restore&&!confirm('确定删除这条记录？删除后可以恢复。'))return;try{if(restore)await api.post('/api/admin/'+type+'/'+x.id+'/restore');else await api.delete((type==='guestbook'?'/api/guestbook/messages/':'/api/comments/')+x.id);if(type==='guestbook')await loadMessages();else await loadComments();await refreshStats();msg(restore?'记录已恢复':'记录已删除')}catch(e){msg(e instanceof Error?e.message:'操作失败',true)}}
+async function refreshStats(){stats.value=(await api.get('/api/admin/overview')).data}
+function addDirection(){profile.directions.push({title:'',eyebrow:'',description:'',tags:''})}
+function removeDirection(i:number){if(confirm('确定移除这个方向？'))profile.directions.splice(i,1)}
+async function saveProfile(){busy.value=true;try{const value={...profile,note_paragraphs:profile.note_paragraphs.split('\n').map(x=>x.trim()).filter(Boolean),directions:profile.directions.map((x,i)=>({...x,sort_order:i+1,tags:x.tags.split(/[·,，]/).map(t=>t.trim()).filter(Boolean)}))};await api.put('/api/admin/site-settings/profile',{value});msg('资料已保存，前台刷新后即可查看')}catch(e){msg(e instanceof Error?e.message:'保存失败',true)}finally{busy.value=false}}
+async function toggleUser(x:any){try{await api.patch('/api/admin/users/'+x.id,{is_active:!x.is_active});await refresh();msg('用户状态已更新')}catch(e){msg(e instanceof Error?e.message:'更新失败',true)}}
+onMounted(()=>void refresh())
 </script>
-
 <template>
-  <section class="admin-page">
-    <header class="admin-heading">
-      <div>
-        <p class="admin-kicker">BANXIA STUDIO / CONTROL ROOM</p>
-        <h1>管理后台</h1>
-        <p>内容、用户与网站运行情况，一处管理。</p>
-      </div>
-      <button class="admin-refresh" :disabled="loading" @click="refreshAll">{{ loading ? '加载中…' : '刷新数据' }}</button>
-    </header>
-
-    <nav class="admin-tabs" aria-label="后台功能">
-      <button v-for="item in [
-        { id: 'overview', label: '总览' }, { id: 'content', label: '内容管理' },
-        { id: 'users', label: '用户管理' }, { id: 'audit', label: '操作日志' },
-        { id: 'settings', label: '关于我' },
-      ]" :key="item.id" :class="{ active: tab === item.id }" @click="tab = item.id as Tab; if (item.id === 'settings') loadSettings()">
-        {{ item.label }}
-      </button>
-    </nav>
-
-    <p v-if="message" class="admin-message" role="status">{{ message }}</p>
-
-    <section v-if="tab === 'overview'" class="admin-stats">
-      <article><span>注册用户</span><strong>{{ overview.users }}</strong></article>
-      <article><span>正常用户</span><strong>{{ overview.active_users }}</strong></article>
-      <article><span>文章评论</span><strong>{{ overview.comments }}</strong></article>
-      <article><span>公开留言</span><strong>{{ overview.guestbook_messages }}</strong></article>
-      <article><span>内容条目</span><strong>{{ contentItems.length }}</strong></article>
-    </section>
-
-    <section v-else-if="tab === 'content'" class="admin-panel">
-      <div class="admin-panel-heading">
-        <div><h2>文章与项目</h2><p>支持草稿、发布和归档。</p></div>
-        <button class="admin-primary" @click="resetDraft(); editorOpen = !editorOpen">新建内容</button>
-      </div>
-      <form v-if="editorOpen" class="admin-editor" @submit.prevent="saveContent">
-        <div class="admin-form-grid">
-          <label>内容类型<select v-model="draft.kind"><option value="post">文章</option><option value="project">项目</option></select></label>
-          <label>状态<select v-model="draft.status"><option value="draft">草稿</option><option value="published">已发布</option><option value="archived">归档</option></select></label>
-          <label>标题<input v-model="draft.title" required maxlength="240"></label>
-          <label>Slug<input v-model="draft.slug" required maxlength="180"></label>
-          <label class="wide">摘要<input v-model="draft.summary" maxlength="600"></label>
-          <label>封面 URL<input v-model="draft.cover_url"></label>
-          <label>GitHub URL<input v-model="draft.github_url"></label>
-          <label class="wide">Markdown 正文<textarea v-model="draft.content" rows="12" maxlength="200000"></textarea></label>
-          <label class="admin-check"><input v-model="draft.featured" type="checkbox"> 首页精选</label>
-        </div>
-        <div class="admin-form-actions"><button class="admin-primary" type="submit">保存内容</button><button type="button" class="admin-secondary" @click="editorOpen = false; resetDraft()">取消</button></div>
-      </form>
-      <div class="admin-table-wrap">
-        <table><thead><tr><th>标题</th><th>类型</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead>
-          <tbody><tr v-for="item in contentItems" :key="item.id">
-            <td><strong>{{ item.title }}</strong><small>{{ item.slug }}</small></td>
-            <td>{{ item.kind === 'post' ? '文章' : '项目' }}</td><td>{{ item.status }}</td>
-            <td>{{ item.id }}</td>
-            <td><button class="admin-link" @click="editContent(item)">编辑</button><button class="admin-link danger" @click="deleteContent(item)">删除</button></td>
-          </tr><tr v-if="!contentItems.length"><td colspan="5" class="empty">还没有数据库内容。现有 Hugo 内容目录暂时保留，不会自动删除。</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section v-else-if="tab === 'users'" class="admin-panel">
-      <div class="admin-panel-heading"><div><h2>用户管理</h2><p>查看注册用户并管理账号状态。</p></div></div>
-      <div class="admin-table-wrap"><table><thead><tr><th>用户</th><th>邮箱</th><th>角色</th><th>状态</th><th>操作</th></tr></thead>
-        <tbody><tr v-for="user in users" :key="user.id"><td>{{ user.nickname }}</td><td>{{ user.email }}</td><td>{{ user.role }}</td><td>{{ user.is_active ? '正常' : '已停用' }}</td><td><button class="admin-link" @click="toggleUser(user)">{{ user.is_active ? '停用' : '启用' }}</button></td></tr></tbody>
-      </table></div>
-    </section>
-
-    <section v-else-if="tab === 'audit'" class="admin-panel">
-      <div class="admin-panel-heading"><div><h2>管理员操作日志</h2><p>记录后台关键操作。</p></div></div>
-      <div class="admin-table-wrap"><table><thead><tr><th>操作</th><th>对象</th><th>详情</th><th>时间</th></tr></thead>
-        <tbody><tr v-for="(log, index) in auditLogs" :key="String(log.id || index)"><td>{{ log.action }}</td><td>{{ log.target_type }} / {{ log.target_id }}</td><td>{{ log.detail }}</td><td>{{ log.created_at }}</td></tr></tbody>
-      </table></div>
-    </section>
-
-    <section v-else class="admin-panel">
-      <div class="admin-panel-heading"><div><h2>关于我资料</h2><p>以 JSON 格式编辑公开资料。</p></div></div>
-      <textarea v-model="siteProfile" class="admin-json-editor" rows="18" spellcheck="false"></textarea>
-      <button class="admin-primary" @click="saveProfile">保存资料</button>
-    </section>
-  </section>
+<div class="admin-layout">
+<aside class="sidebar"><div class="brand"><span>半</span><b>半夏小筑<small>CONTENT STUDIO</small></b></div><p class="nav-caption">工作空间</p><button v-for="n in nav" :key="n.id" :class="{active:tab===n.id}" @click="go(n.id)">{{n.label}}</button><div class="side-foot">● 管理模式已启用</div></aside>
+<main class="main"><header class="topbar"><span>管理后台　/　<b>{{nav.find(x=>x.id===tab)?.label}}</b></span><button @click="refresh" :disabled="loading">{{loading?'同步中…':'↻ 刷新数据'}}</button></header><div class="workspace">
+<header class="heading"><p>BANXIA STUDIO / CONTROL ROOM</p><h1>{{nav.find(x=>x.id===tab)?.label}}</h1><span>把网站内容与日常维护，整理成清晰易用的工作台。</span></header>
+<p v-if="notice" class="notice">{{notice}}</p><p v-if="error" class="error">{{error}}</p>
+<section v-if="tab==='overview'">
+<div class="stats"><article><small>注册用户</small><b>{{stats.users}}</b></article><article><small>正常用户</small><b>{{stats.active_users}}</b></article><article><small>文章评论</small><b>{{stats.comments}}</b></article><article><small>公开留言</small><b>{{stats.guestbook_messages}}</b></article></div>
+<div class="panel welcome"><div><h2>今天想更新什么？</h2><p>在表格中维护内容，保存后同步到网站。</p></div><div><button class="primary" @click="go('content');reset();editor=true">＋ 发布新内容</button> <button @click="go('profile')">编辑关于我</button> <button @click="go('guestbook')">处理留言</button></div></div>
+<div class="panel"><h2>最近更新</h2><table><thead><tr><th>标题</th><th>类型</th><th>状态</th><th>更新时间</th></tr></thead><tbody><tr v-for="x in contents.slice(0,6)" :key="x.id"><td>{{x.title}}</td><td>{{x.kind==='post'?'文章':'项目'}}</td><td>{{x.status}}</td><td>{{x.updated_at?new Date(x.updated_at).toLocaleDateString():'—'}}</td></tr></tbody></table></div>
+</section>
+<section v-else-if="tab==='content'" class="panel"><div class="panel-head"><div><h2>文章与项目</h2><p>标题、状态、排序和精选可直接在表格中修改。</p></div><button class="primary" @click="reset();editor=true">＋ 新建内容</button></div>
+<div class="toolbar"><input v-model="filter.keyword" placeholder="搜索标题或 Slug"><select v-model="filter.kind"><option value="">全部类型</option><option value="post">文章</option><option value="project">项目</option></select><select v-model="filter.status"><option value="">全部状态</option><option value="draft">草稿</option><option value="published">已发布</option><option value="archived">归档</option></select></div>
+<table><thead><tr><th>标题</th><th>类型</th><th>状态</th><th>排序</th><th>精选</th><th>操作</th></tr></thead><tbody><tr v-for="x in filtered" :key="x.id"><td><input v-model="x.title" class="cell"><small>{{x.slug}}</small></td><td>{{x.kind==='post'?'文章':'项目'}}</td><td><select v-model="x.status" class="cell"><option value="draft">草稿</option><option value="published">已发布</option><option value="archived">归档</option></select></td><td><input v-model.number="x.sort_order" type="number" class="cell number"></td><td><input v-model="x.featured" type="checkbox"></td><td class="actions"><button @click="quickSave(x)">保存行</button><button @click="edit(x)">编辑正文</button><button class="danger" @click="removeContent(x)">删除</button></td></tr><tr v-if="!filtered.length"><td colspan="6" class="empty">没有匹配内容。</td></tr></tbody></table>
+</section>
+<section v-else-if="tab==='guestbook'||tab==='comments'" class="panel"><div class="panel-head"><div><h2>{{tab==='guestbook'?'留言列表':'文章评论'}}</h2><p>删除为软删除，可恢复，不会直接清除数据库记录。</p></div><label><input type="checkbox" v-model="includeDeleted" @change="tab==='guestbook'?loadMessages():loadComments()"> 显示已删除</label></div><input v-model="keyword" class="search" placeholder="搜索作者、内容或文章标识"><table><thead><tr><th>作者</th><th>内容</th><th v-if="tab==='comments'">文章</th><th>时间</th><th>状态</th><th>操作</th></tr></thead><tbody><tr v-for="x in (tab==='guestbook'?messages:comments).filter(x=>(x.nickname+' '+x.content+' '+(x.article_slug||'')).toLowerCase().includes(keyword.toLowerCase()))" :key="x.id"><td>{{x.nickname}}</td><td class="long-text">{{x.content}}</td><td v-if="tab==='comments'">{{x.article_slug}}</td><td>{{new Date(x.created_at).toLocaleString()}}</td><td>{{x.is_deleted?'已删除':'正常'}}</td><td><button v-if="!x.is_deleted" class="danger" @click="moderate(x,tab)">删除</button><button v-else @click="moderate(x,tab,true)">恢复</button></td></tr><tr v-if="!(tab==='guestbook'?messages:comments).length"><td colspan="6" class="empty">暂无记录</td></tr></tbody></table></section>
+<section v-else-if="tab==='profile'">
+<div class="panel"><div class="panel-head"><div><h2>基本资料</h2><p>修改后同步到前台关于我页面。</p></div><button class="primary" :disabled="busy" @click="saveProfile">{{busy?'保存中…':'保存全部修改'}}</button></div><div class="form-grid"><label>显示名称<input v-model="profile.name"></label><label>个人身份介绍<input v-model="profile.headline"></label><label class="wide">页面简介<textarea v-model="profile.bio"></textarea></label><label>联系邮箱<input v-model="profile.email"></label><label>GitHub 地址<input v-model="profile.github_url"></label><label class="wide">头像地址<input v-model="profile.avatar_url"></label><label>方向区块标题<input v-model="profile.intro_title"></label><label>个人说明标题<input v-model="profile.note_title"></label><label class="wide">关于这里（每行一段）<textarea v-model="profile.note_paragraphs" rows="4"></textarea></label></div></div>
+<div class="panel"><div class="panel-head"><div><h2>技术与学习方向</h2><p>新增、编辑、删除方向卡片，前台自动同步。</p></div><button @click="addDirection">＋ 添加方向</button></div><div class="direction-row heading-row"><span>方向名称</span><span>英文标识</span><span>介绍</span><span>技术标签</span><span>操作</span></div><div v-for="(d,i) in profile.directions" :key="i" class="direction-row"><input v-model="d.title" placeholder="方向名称"><input v-model="d.eyebrow" placeholder="01 / AREA"><textarea v-model="d.description" rows="2" placeholder="方向介绍"></textarea><input v-model="d.tags" placeholder="OpenCV · C++ · Qt"><button class="danger" @click="profile.directions.splice(i,1)">移除</button></div></div>
+</section>
+<section v-else-if="tab==='users'" class="panel"><h2>注册用户</h2><table><thead><tr><th>昵称</th><th>邮箱</th><th>角色</th><th>注册时间</th><th>状态</th><th>操作</th></tr></thead><tbody><tr v-for="u in users" :key="u.id"><td>{{u.nickname}}</td><td>{{u.email}}</td><td>{{u.role}}</td><td>{{new Date(u.created_at).toLocaleDateString()}}</td><td>{{u.is_active?'正常':'已停用'}}</td><td><button @click="toggleUser(u)">{{u.is_active?'停用':'启用'}}</button></td></tr></tbody></table></section>
+<section v-else class="panel"><h2>管理员操作日志</h2><table><thead><tr><th>操作人</th><th>动作</th><th>对象</th><th>详情</th><th>时间</th></tr></thead><tbody><tr v-for="(x,i) in logs" :key="x.id||i"><td>{{x.actor_nickname||'—'}}</td><td>{{x.action}}</td><td>{{x.target_type}} / {{x.target_id}}</td><td>{{x.detail||'—'}}</td><td>{{x.created_at?new Date(x.created_at).toLocaleString():'—'}}</td></tr></tbody></table></section>
+</div></main>
+<div v-if="editor" class="overlay" @click.self="editor=false"><section class="drawer"><div class="panel-head"><h2>{{editId?'编辑内容':'发布新内容'}}</h2><button @click="editor=false">关闭 ×</button></div><form @submit.prevent="saveContent"><div class="form-grid"><label>内容类型<select v-model="draft.kind"><option value="post">文章</option><option value="project">项目</option></select></label><label>发布状态<select v-model="draft.status"><option value="draft">草稿</option><option value="published">立即发布</option><option value="archived">归档</option></select></label><label class="wide">标题<input v-model="draft.title" required></label><label class="wide">Slug<input v-model="draft.slug" required></label><label class="wide">摘要<input v-model="draft.summary"></label><label>封面地址<input v-model="draft.cover_url"></label><label>GitHub 地址<input v-model="draft.github_url"></label><label class="wide">正文（Markdown）<textarea v-model="draft.content" rows="18" placeholder="# 标题&#10;&#10;在这里编写正文…"></textarea></label><label><input v-model="draft.featured" type="checkbox"> 首页精选</label></div><p><button class="primary" :disabled="busy">{{busy?'保存中…':'保存内容'}}</button></p></form></section></div>
+</main></div>
 </template>
-
 <style scoped>
-.admin-page{width:min(1180px,calc(100% - 48px));margin:64px auto 100px;color:#29263a}
-.admin-heading,.admin-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
-.admin-kicker{font:11px 'DM Mono',monospace;letter-spacing:.16em;color:#7564c1}
-.admin-heading h1{margin:10px 0;font-size:clamp(34px,5vw,52px);letter-spacing:-.05em}
-.admin-heading p,.admin-panel-heading p{color:#817d91;font-size:13px}
-.admin-refresh,.admin-secondary{background:white;border:1px solid #e5e0f2;border-radius:999px;padding:11px 18px;color:#6655ad}
-.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:34px 0 22px;border-bottom:1px solid #eae7f2}
-.admin-tabs button{border:0;background:transparent;padding:13px 17px;color:#817d91}
-.admin-tabs button.active{color:#6e5cbd;border-bottom:2px solid #8b79d6}
-.admin-message{padding:12px 16px;background:#f0edff;border-radius:12px;color:#6252a8}
-.admin-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
-.admin-stats article,.admin-panel{background:#fff;border:1px solid #eae7f2;border-radius:18px;padding:22px}
-.admin-stats article span{display:block;color:#817d91;font-size:12px}
-.admin-stats article strong{display:block;margin-top:14px;font-size:32px}
-.admin-panel-heading h2{margin:0;font-size:21px}
-.admin-primary{border:0;border-radius:999px;background:#7564c1;color:white;padding:11px 20px}
-.admin-editor{margin:22px 0;padding:20px;background:#fbfaff;border:1px solid #eae7f2;border-radius:14px}
-.admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.admin-form-grid label{display:grid;gap:7px;font-size:12px;color:#6f6a80}
-.admin-form-grid input,.admin-form-grid select,.admin-form-grid textarea,.admin-json-editor{width:100%;border:1px solid #e5e0f2;border-radius:10px;padding:11px;background:white;color:#29263a;font:inherit}
-.admin-form-grid .wide{grid-column:1/-1}
-.admin-form-grid .admin-check{display:flex;align-items:center}
-.admin-form-actions{display:flex;gap:10px;margin-top:16px}
-.admin-table-wrap{overflow-x:auto;margin-top:20px}
-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
-th,td{padding:14px 12px;border-bottom:1px solid #eeeaf5;white-space:nowrap}
-th{color:#817d91;font-weight:500}
-td strong,td small{display:block}td small{margin-top:4px;color:#9993a8}
-.admin-link{border:0;background:none;color:#6e5cbd;margin-right:12px}.admin-link.danger{color:#bd5b70}
-.empty{text-align:center;color:#817d91;padding:30px}
-.admin-json-editor{margin:20px 0;font:13px/1.7 'DM Mono',monospace}
-@media(max-width:760px){.admin-page{width:calc(100% - 32px);margin-top:36px}.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-form-grid{grid-template-columns:1fr}.admin-form-grid .wide{grid-column:auto}.admin-heading{align-items:flex-start;flex-direction:column}.admin-panel{padding:15px}}
+.admin-layout{--ink:#302c40;--muted:#8a8598;--line:#ece9f3;--lav:#7868c5;display:grid;grid-template-columns:225px 1fr;min-height:calc(100vh - 100px);background:#faf9fc;color:var(--ink)}.sidebar{position:sticky;top:0;height:100vh;padding:24px 15px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column}.brand{display:flex;gap:10px;align-items:center;padding:5px 9px 26px}.brand>span{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#ded7fa,#d6efec);color:#6254a5;font-size:20px}.brand b{font-size:13px}.brand small{display:block;margin-top:3px;color:#aaa4b7;font:9px monospace;letter-spacing:.12em}.nav-caption{padding:0 10px;color:#aaa4b7;font-size:10px}.sidebar>button{padding:12px 10px;margin:2px 0;border:0;border-radius:9px;background:none;text-align:left;color:#777286;font-size:12px}.sidebar>button.active{background:#f1effb;color:#6555b3;font-weight:700}.side-foot{margin-top:auto;padding:14px 8px;border-top:1px solid var(--line);font-size:10px;color:#8a8598}.main{min-width:0}.topbar{height:64px;padding:0 30px;display:flex;align-items:center;justify-content:space-between;background:white;border-bottom:1px solid var(--line);font-size:12px}.topbar button,.panel button,.drawer button{border:1px solid #e4e0ef;border-radius:8px;padding:8px 12px;background:white;color:#6e60b6;font-size:11px;cursor:pointer}.workspace{max-width:1450px;margin:auto;padding:30px}.heading{margin-bottom:22px}.heading p{margin:0 0 8px;color:#8b7bd0;font:10px monospace;letter-spacing:.15em}.heading h1{margin:0;font-size:29px}.heading span{display:block;margin-top:8px;color:var(--muted);font-size:12px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stats article,.panel{padding:20px;background:white;border:1px solid var(--line);border-radius:14px}.stats small{color:var(--muted);font-size:11px}.stats b{display:block;margin-top:12px;font-size:28px}.panel{margin-top:16px;overflow:auto}.panel h2{margin:0 0 15px;font-size:16px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}.panel-head h2{margin:0}.panel-head p,.welcome p{margin:5px 0 0;color:var(--muted);font-size:11px}.primary{background:#7666c1!important;color:white!important;border-color:#7666c1!important}.welcome{display:flex;justify-content:space-between;align-items:center;gap:15px;background:linear-gradient(110deg,#f5f2ff,#f2fbfa)}.toolbar{display:flex;gap:8px;margin:14px 0}.toolbar input{flex:1}input,select,textarea{min-width:0;border:1px solid #e7e3ef;border-radius:7px;padding:8px;background:white;color:#393448;font:12px Arial,sans-serif}.cell{border-color:transparent;max-width:180px}.number{width:65px}table{width:100%;border-collapse:collapse;text-align:left;font-size:11px}th,td{padding:11px 9px;border-bottom:1px solid #f0edf5;white-space:nowrap}th{color:#9690a2;font-size:10px}td small{display:block;margin-top:3px;color:#a39dae}.actions{min-width:175px}.actions button{border:0;padding:4px 6px}.danger{color:#bd5d73!important}.empty{text-align:center;color:#aaa;padding:24px}.notice,.error{padding:10px 13px;border-radius:8px;font-size:12px}.notice{background:#eff8f4;color:#47856e}.error{background:#fff1f2;color:#b34f63}.long-text{white-space:normal;min-width:240px;max-width:500px;line-height:1.7}.search{width:100%;margin:0 0 12px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.form-grid label{display:grid;gap:6px;color:#716c80;font-size:11px}.form-grid .wide{grid-column:1/-1}.form-grid textarea{resize:vertical;line-height:1.7}.direction-row{display:grid;grid-template-columns:120px 130px minmax(200px,1fr) 170px 55px;gap:8px;align-items:start;padding:9px 0;border-bottom:1px solid #f0edf5;min-width:750px}.heading-row{color:#9690a2;font-size:10px}.direction-row textarea{resize:vertical}.overlay{position:fixed;inset:0;z-index:20;display:flex;justify-content:flex-end;background:#201c2b66}.drawer{width:min(700px,100%);height:100%;overflow:auto;padding:25px;background:white;box-shadow:-15px 0 50px #211b3520}.drawer .panel-head{margin-bottom:22px}.drawer .panel-head h2{font-size:20px}@media(max-width:900px){.admin-layout{grid-template-columns:1fr}.sidebar{position:relative;height:auto;padding:10px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding-bottom:10px}.nav-caption,.side-foot{display:none}.sidebar>button{display:inline-block;padding:9px}.workspace{padding:18px}.stats{grid-template-columns:repeat(2,1fr)}.welcome{align-items:flex-start;flex-direction:column}}@media(max-width:600px){.workspace{padding:12px}.panel{padding:14px}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.toolbar{flex-wrap:wrap}.toolbar input{flex-basis:100%}.topbar{padding:0 14px}}
 </style>
