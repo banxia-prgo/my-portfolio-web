@@ -9,3 +9,4 @@ import './styles/original-site.css'
 import './styles/vue-compat.css'
 
 createApp(App).use(createPinia()).use(router).use(ElementPlus).mount('#app')
+import './styles/typography-polish.css'
