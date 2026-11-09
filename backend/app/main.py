@@ -18,7 +18,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 app = FastAPI(title="半夏小筑 API", version="1.0.0")
 
-MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", "/app/media")).resolve()
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", "media")).resolve()
 MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 MAX_IMAGE_BYTES = 4 * 1024 * 1024
 app.mount("/media", StaticFiles(directory=str(MEDIA_ROOT)), name="media")
