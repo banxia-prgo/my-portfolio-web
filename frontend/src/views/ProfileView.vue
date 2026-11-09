@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {onMounted,ref} from 'vue'
 import {useRouter} from 'vue-router'
-import {api} from '@/api/client'
+import {api, clearCsrfToken} from '@/api/client'
 import {useAuthStore, type AuthUser} from '@/stores/auth'
 interface Profile{email:string;nickname:string;avatar_url?:string|null}
 interface Activity{likes:string[];bookmarks:string[];comments:Array<{id:number;article_slug:string;content:string;created_at:string}>}
 const router=useRouter(),auth=useAuthStore(),profile=ref<Profile|null>(null),activity=ref<Activity|null>(null),nickname=ref(''),error=ref(''),message=ref(''),busy=ref(false)
 onMounted(async()=>{try{const [p,a]=await Promise.all([api.get('/api/users/me'),api.get('/api/users/me/activity')]);profile.value=p.data;auth.setUser(p.data as AuthUser);nickname.value=p.data.nickname;activity.value=a.data}catch{error.value='暂时无法读取个人资料，请确认已登录。'}})
 async function save(){if(!nickname.value.trim())return;busy.value=true;message.value='';try{const r=await api.patch('/api/users/me',{nickname:nickname.value.trim()});profile.value=r.data;auth.setUser(r.data as AuthUser);message.value='资料已更新'}catch(e){message.value=e instanceof Error?e.message:'更新失败'}finally{busy.value=false}}
-async function logout(){try{await api.post('/api/auth/logout')}finally{auth.clearUser();await router.push('/')}}
+async function logout(){try{await api.post('/api/auth/logout')}finally{clearCsrfToken();auth.clearUser();await router.push('/')}}
 </script>
 <template><div class="page-wrap profile"><span class="eyebrow">YOUR SPACE / ACCOUNT</span><h1 class="page-title">个人中心<span>。</span></h1><div v-if="profile" class="user-card"><div class="avatar">{{profile.nickname.slice(0,1)}}</div><div class="identity"><h2>{{profile.nickname}}</h2><p>{{profile.email}}</p></div><button class="logout" @click="logout">退出登录</button></div><div v-else class="notice">{{error||'正在读取资料...'}}</div><section v-if="profile" class="edit"><label>展示昵称<input v-model="nickname" maxlength="40"></label><button :disabled="busy" @click="save">{{busy?'保存中...':'保存资料'}}</button><span>{{message}}</span></section><div v-if="activity" class="stats"><div><b>{{activity.comments.length}}</b><span>我的评论</span></div><div><b>{{activity.bookmarks.length}}</b><span>我的收藏</span></div><div><b>{{activity.likes.length}}</b><span>我的点赞</span></div></div><section v-if="activity" class="activity"><h2>最近评论</h2><article v-for="item in activity.comments" :key="item.id"><RouterLink :to="'/posts/'+item.article_slug+'/'">{{item.article_slug}}</RouterLink><p>{{item.content}}</p><time>{{new Date(item.created_at).toLocaleString('zh-CN')}}</time></article><p v-if="!activity.comments.length" class="muted">还没有发表过评论。</p></section></div></template>
 <style scoped>
