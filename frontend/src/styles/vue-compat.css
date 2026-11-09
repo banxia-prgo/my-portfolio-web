@@ -170,3 +170,37 @@ body.bx-lightbox-open { overflow: hidden; }
 .site-enhancements-anchor { display: none; }
 @media (max-width: 600px) { .bx-back-top { right: 14px; bottom: 16px; width: 38px; height: 38px; } .bx-lightbox { padding: 3.5rem 1rem 1rem; } }
 @media (prefers-reduced-motion: reduce) { .bx-back-top, .bx-lightbox, .bx-reveal-ready { transition: none; } .bx-reveal-ready { opacity: 1; transform: none; } }
+
+
+/* Article TOC: keep it in the left column and scroll the list with the active heading. */
+@media (min-width: 1100px) {
+  .post-single.post-has-toc { max-width: 1120px; }
+  .post-layout {
+    display: grid;
+    grid-template-columns: minmax(180px, var(--toc-sidebar-width)) minmax(0, 760px);
+    gap: var(--toc-sidebar-gap);
+    align-items: start;
+  }
+  .toc {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    max-height: calc(100vh - 110px);
+    overflow: hidden;
+  }
+  .toc details { min-height: 0; }
+  .toc nav {
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+  }
+  .toc-resize-handle { display: block; }
+}
+@media (max-width: 1099px) {
+  .post-single.post-has-toc { max-width: 900px; }
+  .toc { position: static; max-height: none; overflow: visible; }
+  .toc nav { max-height: min(42vh, 360px); overflow-y: auto; overscroll-behavior: contain; }
+  .toc-resize-handle { display: none; }
+}
