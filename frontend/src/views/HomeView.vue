@@ -81,7 +81,7 @@ onMounted(async () => {
                 <p>{{ featuredProject.summary }}</p>
                 <div class="bx-project-tags"><span>C++</span><span>Qt</span><span>图像处理</span></div>
                 <div class="bx-project-card__foot">
-                  <a href="https://github.com/banxia-prgo/picture_browser" target="_blank" rel="noopener">◉ GitHub</a>
+                  <a v-if="featuredProject.github" :href="featuredProject.github" target="_blank" rel="noopener noreferrer">◉ GitHub</a>
                   <RouterLink :to="featuredProject.href">项目详情 →</RouterLink>
                 </div>
               </div>
