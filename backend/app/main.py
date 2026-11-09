@@ -25,6 +25,12 @@ def health(db: Session = Depends(get_db)):
     db.execute(select(1))
     return {"status":"ok","database":"connected"}
 
+def public_user_payload(user: User) -> dict:
+    payload = UserOut.model_validate(user).model_dump()
+    payload["role"] = "admin" if is_admin_user(user) else user.role
+    return payload
+
+
 def current_user(request: Request, db: Session) -> User:
     token = request.cookies.get(SESSION_COOKIE)
     if not token:
@@ -70,7 +76,7 @@ def register(data: RegisterIn, request: Request, response: Response, x_csrf_toke
     db.add(UserSession(user_id=user.id, token_hash=token_digest(token), expires_at=session_expiry()))
     db.commit(); db.refresh(user)
     set_auth_cookies(response, token)
-    return user
+    return public_user_payload(user)
 
 @app.post("/api/auth/login", response_model=UserOut)
 def login(data: LoginIn, request: Request, response: Response, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
@@ -97,7 +103,7 @@ def logout(request: Request, response: Response, x_csrf_token: str | None = Head
 
 @app.get("/api/users/me", response_model=UserOut)
 def me(request: Request, db: Session = Depends(get_db)):
-    return current_user(request, db)
+    return public_user_payload(current_user(request, db))
 
 @app.patch("/api/users/me", response_model=UserOut)
 def update_profile(data: ProfileUpdate, request: Request, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
