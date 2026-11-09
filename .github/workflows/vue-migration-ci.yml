@@ -1,0 +1,93 @@
+name: Vue migration CI
+
+on:
+  push:
+    branches: [vue-migration]
+  pull_request:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "static/**"
+      - "frontend/**"
+      - "backend/**"
+      - "scripts/**"
+      - ".github/workflows/vue-migration-ci.yml"
+
+jobs:
+  content-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r scripts/requirements-migration.txt
+      - run: python scripts/migrate_hugo_content.py
+      - name: Validate migrated content
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("frontend/public/content")
+          catalog = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
+          resume = json.loads((root / "resume.json").read_text(encoding="utf-8"))
+
+          assert len(catalog["posts"]) == 2, f"Expected 2 posts, got {len(catalog['posts'])}"
+          assert len(catalog["projects"]) == 1, f"Expected 1 project, got {len(catalog['projects'])}"
+          assert len(resume) == 1, f"Expected 1 resume section, got {len(resume)}"
+
+          project = catalog["projects"][0]
+          assert project["title"] == "图片浏览器"
+          assert project["github"] == "https://github.com/banxia-prgo/picture_browser"
+          assert project["tags"] == ["C++11", "Qt Widgets", "Qt Creator"]
+          assert all(item.get("content", "").strip() for item in catalog["posts"] + catalog["projects"])
+          assert resume[0]["content"].strip()
+          print("Content migration validation passed: 2 posts, 1 project, 1 resume section.")
+          PY
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: banxia
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: banxia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U banxia -d banxia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql+psycopg://banxia:ci-password@localhost:5432/banxia
+      SECRET_KEY: ci-only-secret-key-not-for-production
+      FRONTEND_ORIGIN: https://www.banxia.xin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q app alembic
+      - run: alembic upgrade head
+      - run: python -c "from app.main import app; print(app.title)"
