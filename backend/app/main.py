@@ -402,7 +402,7 @@ def delete_comment(
     if comment.user_id != actor.id and not is_admin_user(actor):
         raise HTTPException(status_code=403, detail="无权删除这条评论")
     comment.is_deleted = True
-    if is_admin_user(actor) and comment.user_id != actor.id:
+    if is_admin_user(actor):
         write_audit_log(db, actor, "comment.delete", "comment", comment.id)
     db.commit()
     return {"ok": True}
@@ -423,7 +423,7 @@ def delete_guestbook_message(
     if message.user_id != actor.id and not is_admin_user(actor):
         raise HTTPException(status_code=403, detail="无权删除这条留言")
     message.is_deleted = True
-    if is_admin_user(actor) and message.user_id != actor.id:
+    if is_admin_user(actor):
         write_audit_log(db, actor, "guestbook.delete", "guestbook_message", message.id)
     db.commit()
     return {"ok": True}
@@ -683,15 +683,7 @@ def admin_media_list(
         select(MediaAsset).order_by(MediaAsset.created_at.desc())
         .offset(max(0, offset)).limit(max(1, min(limit, 100)))
     ).all()
-    return [
-        {
-            "id": item.id, "original_name": item.original_name,
-            "public_url": item.public_url, "mime_type": item.mime_type,
-            "size_bytes": item.size_bytes, "alt_text": item.alt_text,
-            "created_at": item.created_at,
-        }
-        for item in items
-    ]
+    return [_media_payload(item) for item in items]
 
 
 @app.get("/api/admin/guestbook")
@@ -745,7 +737,7 @@ def admin_restore_comment(comment_id: int, request: Request,
     return {"ok": True}
 
 
-@app.patch("/api/admin/content/bulk")
+@app.patch("/api/admin/content-bulk")
 def admin_bulk_update_content(
     data: ContentBulkUpdate,
     request: Request,
