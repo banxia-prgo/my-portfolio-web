@@ -88,7 +88,7 @@ def login(data: LoginIn, request: Request, response: Response, x_csrf_token: str
     token = new_session_token()
     db.add(UserSession(user_id=user.id, token_hash=token_digest(token), expires_at=session_expiry()))
     db.commit(); set_auth_cookies(response, token)
-    return user
+    return public_user_payload(user)
 
 @app.post("/api/auth/logout")
 def logout(request: Request, response: Response, x_csrf_token: str | None = Header(default=None), db: Session = Depends(get_db)):
