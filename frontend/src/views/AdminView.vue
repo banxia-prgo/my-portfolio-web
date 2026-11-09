@@ -30,7 +30,6 @@ async function removeContent(x:Content){if(!confirm('确定永久删除「'+x.ti
 async function moderate(x:Entry,type:'guestbook'|'comments',restore=false){if(!restore&&!confirm('确定删除这条记录？删除后可以恢复。'))return;try{if(restore)await api.post('/api/admin/'+type+'/'+x.id+'/restore');else await api.delete((type==='guestbook'?'/api/guestbook/messages/':'/api/comments/')+x.id);if(type==='guestbook')await loadMessages();else await loadComments();await refreshStats();msg(restore?'记录已恢复':'记录已删除')}catch(e){msg(e instanceof Error?e.message:'操作失败',true)}}
 async function refreshStats(){stats.value=(await api.get('/api/admin/overview')).data}
 function addDirection(){profile.directions.push({title:'',eyebrow:'',description:'',tags:''})}
-function removeDirection(i:number){if(confirm('确定移除这个方向？'))profile.directions.splice(i,1)}
 async function saveProfile(){busy.value=true;try{const value={...profile,note_paragraphs:profile.note_paragraphs.split('\n').map(x=>x.trim()).filter(Boolean),directions:profile.directions.map((x,i)=>({...x,sort_order:i+1,tags:x.tags.split(/[·,，]/).map(t=>t.trim()).filter(Boolean)}))};await api.put('/api/admin/site-settings/profile',{value});msg('资料已保存，前台刷新后即可查看')}catch(e){msg(e instanceof Error?e.message:'保存失败',true)}finally{busy.value=false}}
 async function toggleUser(x:any){try{await api.patch('/api/admin/users/'+x.id,{is_active:!x.is_active});await refresh();msg('用户状态已更新')}catch(e){msg(e instanceof Error?e.message:'更新失败',true)}}
 onMounted(()=>void refresh())
