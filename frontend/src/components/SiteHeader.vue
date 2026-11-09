@@ -7,9 +7,10 @@ const open = ref(false)
 const route = useRoute()
 const links = [
   { label: '首页', to: '/' },
+  { label: '文章', to: '/posts/' },
   { label: '项目', to: '/projects/' },
-  { label: '随笔', to: '/posts/' },
-  { label: '简历', to: '/resume/' },
+  { label: '留言', to: '/guestbook/' },
+  { label: '关于我', to: '/about/' },
 ]
 </script>
 
