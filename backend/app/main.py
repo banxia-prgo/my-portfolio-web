@@ -862,7 +862,12 @@ async def admin_upload_media(
                 extension, mime = ".webp", "image/webp"
                 output_format = "WEBP"
             original_buffer = BytesIO()
-            save_options = {"quality": 90, "optimize": True} if output_format in {"JPEG", "PNG"} else {"quality": 90, "method": 6}
+            if output_format == "JPEG":
+                save_options = {"quality": 90, "optimize": True}
+            elif output_format == "PNG":
+                save_options = {"optimize": True}
+            else:
+                save_options = {"quality": 90, "method": 6}
             normalized.save(original_buffer, format=output_format, **save_options)
             original_bytes = original_buffer.getvalue()
             thumb = normalized.copy()
