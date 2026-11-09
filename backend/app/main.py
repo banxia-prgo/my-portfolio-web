@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db
-from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage
-from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn
+from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage, AuditLog
+from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn, AdminUserUpdate
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
 from .rate_limit import limit_attempts
@@ -213,3 +213,200 @@ def create_guestbook_message(
         "nickname": user.nickname,
         "created_at": item.created_at,
     }
+
+
+
+def is_admin_user(user: User) -> bool:
+    configured = {
+        item.strip().lower()
+        for item in settings.admin_emails.split(",")
+        if item.strip()
+    }
+    return user.role == "admin" or user.email.lower() in configured
+
+
+def require_admin(request: Request, db: Session) -> User:
+    user = current_user(request, db)
+    if not is_admin_user(user):
+        raise HTTPException(status_code=403, detail="需要管理员权限")
+    return user
+
+
+def write_audit_log(
+    db: Session,
+    actor: User,
+    action: str,
+    target_type: str,
+    target_id: str | int | None = None,
+    detail: str | None = None,
+) -> None:
+    db.add(AuditLog(
+        actor_user_id=actor.id,
+        action=action,
+        target_type=target_type,
+        target_id=str(target_id) if target_id is not None else None,
+        detail=detail,
+    ))
+
+
+@app.get("/api/admin/me")
+def admin_me(request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    return {
+        "id": user.id,
+        "email": user.email,
+        "nickname": user.nickname,
+        "role": "admin",
+        "is_active": user.is_active,
+    }
+
+
+@app.get("/api/admin/overview")
+def admin_overview(request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    return {
+        "users": db.scalar(select(func.count()).select_from(User)) or 0,
+        "active_users": db.scalar(select(func.count()).select_from(User).where(User.is_active.is_(True))) or 0,
+        "comments": db.scalar(select(func.count()).select_from(Comment).where(Comment.is_deleted.is_(False))) or 0,
+        "guestbook_messages": db.scalar(select(func.count()).select_from(GuestbookMessage).where(GuestbookMessage.is_deleted.is_(False))) or 0,
+    }
+
+
+@app.get("/api/admin/users")
+def admin_list_users(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+    total = db.scalar(select(func.count()).select_from(User)) or 0
+    users = db.scalars(select(User).order_by(User.created_at.desc()).offset(offset).limit(limit)).all()
+    return {
+        "items": [
+            {
+                "id": item.id,
+                "email": item.email,
+                "nickname": item.nickname,
+                "avatar_url": item.avatar_url,
+                "is_active": item.is_active,
+                "role": "admin" if is_admin_user(item) else "user",
+                "created_at": item.created_at,
+            }
+            for item in users
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@app.patch("/api/admin/users/{user_id}")
+def admin_update_user(
+    user_id: int,
+    data: AdminUserUpdate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    if target.id == actor.id and (data.is_active is False or data.role == "user"):
+        raise HTTPException(status_code=400, detail="不能停用或降级当前管理员账号")
+    if data.is_active is not None:
+        target.is_active = data.is_active
+        if not data.is_active:
+            sessions = db.scalars(select(UserSession).where(UserSession.user_id == target.id)).all()
+            for session in sessions:
+                db.delete(session)
+    if data.role is not None:
+        target.role = data.role
+    write_audit_log(db, actor, "user.update", "user", target.id, f"is_active={data.is_active}; role={data.role}")
+    db.commit()
+    db.refresh(target)
+    return {
+        "id": target.id,
+        "email": target.email,
+        "nickname": target.nickname,
+        "is_active": target.is_active,
+        "role": "admin" if is_admin_user(target) else "user",
+    }
+
+
+@app.get("/api/admin/audit-logs")
+def admin_audit_logs(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+    rows = db.execute(
+        select(AuditLog, User)
+        .outerjoin(User, AuditLog.actor_user_id == User.id)
+        .order_by(AuditLog.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "id": log.id,
+            "actor_user_id": log.actor_user_id,
+            "actor_nickname": actor.nickname if actor else None,
+            "action": log.action,
+            "target_type": log.target_type,
+            "target_id": log.target_id,
+            "detail": log.detail,
+            "created_at": log.created_at,
+        }
+        for log, actor in rows
+    ]
+
+
+@app.delete("/api/comments/{comment_id}")
+def delete_comment(
+    comment_id: int,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = current_user(request, db)
+    comment = db.get(Comment, comment_id)
+    if not comment or comment.is_deleted:
+        raise HTTPException(status_code=404, detail="评论不存在")
+    if comment.user_id != actor.id and not is_admin_user(actor):
+        raise HTTPException(status_code=403, detail="无权删除这条评论")
+    comment.is_deleted = True
+    if is_admin_user(actor) and comment.user_id != actor.id:
+        write_audit_log(db, actor, "comment.delete", "comment", comment.id)
+    db.commit()
+    return {"ok": True}
+
+
+@app.delete("/api/guestbook/messages/{message_id}")
+def delete_guestbook_message(
+    message_id: int,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = current_user(request, db)
+    message = db.get(GuestbookMessage, message_id)
+    if not message or message.is_deleted:
+        raise HTTPException(status_code=404, detail="留言不存在")
+    if message.user_id != actor.id and not is_admin_user(actor):
+        raise HTTPException(status_code=403, detail="无权删除这条留言")
+    message.is_deleted = True
+    if is_admin_user(actor) and message.user_id != actor.id:
+        write_audit_log(db, actor, "guestbook.delete", "guestbook_message", message.id)
+    db.commit()
+    return {"ok": True}
