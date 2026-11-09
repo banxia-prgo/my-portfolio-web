@@ -10,6 +10,11 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+export function clearCsrfToken(): void {
+  csrfToken = undefined
+  csrfRequest = undefined
+}
+
 async function getCsrfToken(): Promise<string> {
   if (csrfToken) return csrfToken
   if (!csrfRequest) {
