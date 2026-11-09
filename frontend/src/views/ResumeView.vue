@@ -29,10 +29,6 @@ onMounted(async () => {
       <div><h2>半夏</h2><p>代码与思绪的栖居之所</p><a href="https://github.com/banxia-prgo" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
     </div>
     <section class="post-content resume-content">
-      <h2>学习方向</h2>
-      <p>计算机视觉 · 深度学习 · C++ / Python · 工业上位机开发</p>
-      <h2>技术栈</h2>
-      <p class="resume-tags"><span>C++</span><span>Python</span><span>OpenCV</span><span>Qt / QML</span><span>PyTorch</span><span>FastAPI</span><span>Vue 3</span></p>
       <section v-for="(section, index) in sections" :key="index" class="resume-section">
         <h2>{{ String(section.meta.title || '简历资料') }}</h2>
         <div v-html="markdown.render(section.content)"></div>
