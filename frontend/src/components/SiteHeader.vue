@@ -31,6 +31,7 @@ const links = [
         >{{ link.label }}</RouterLink>
       </nav>
       <div class="header-actions">
+        <RouterLink v-if="auth.user?.role === 'admin'" class="login-link" to="/admin/">管理后台</RouterLink>
         <RouterLink v-if="auth.user" class="login-link" to="/profile/" :aria-label="`个人中心：${auth.user.nickname}`">
           <UserRound :size="15" /> {{ auth.user.nickname }}
         </RouterLink>
@@ -46,6 +47,7 @@ const links = [
     </div>
     <nav v-if="open" class="mobile-nav" aria-label="移动端导航">
       <RouterLink v-for="link in links" :key="link.to" :to="link.to" @click="open = false">{{ link.label }}</RouterLink>
+      <RouterLink v-if="auth.user?.role === 'admin'" to="/admin/" @click="open = false">管理后台</RouterLink>
       <RouterLink v-if="auth.user" to="/profile/" @click="open = false">{{ auth.user.nickname }} · 个人中心</RouterLink>
       <RouterLink v-else-if="auth.initialized" to="/login/" @click="open = false">登录 / 注册</RouterLink>
     </nav>
