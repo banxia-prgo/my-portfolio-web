@@ -81,19 +81,24 @@ function initTableOfContents() {
   }).filter((item): item is HTMLElement => Boolean(item))
   if (!targets.length) return
 
+  const tocNav = toc.querySelector<HTMLElement>('nav')
+  if (!tocNav) return
+
   const setActive = (heading: HTMLElement) => {
     links.forEach(link => {
       const id = decodeURIComponent(link.getAttribute('href')!.slice(1))
       const active = id === heading.id
       link.classList.toggle('toc-active', active)
-      const item = link.closest('li')
-      item?.classList.toggle('toc-active-item', active)
-      if (active && item) {
-        const tocBox = toc.getBoundingClientRect()
-        const itemBox = item.getBoundingClientRect()
-        if (itemBox.top < tocBox.top || itemBox.bottom > tocBox.bottom) {
-          item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
-        }
+      if (!active) return
+
+      // Scroll the TOC list itself, keeping the active item visible without
+      // moving the article page or the sticky sidebar.
+      const navBox = tocNav.getBoundingClientRect()
+      const linkBox = link.getBoundingClientRect()
+      if (linkBox.top < navBox.top || linkBox.bottom > navBox.bottom) {
+        const targetTop = tocNav.scrollTop + linkBox.top - navBox.top
+          - (tocNav.clientHeight - linkBox.height) / 2
+        tocNav.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' })
       }
     })
   }
