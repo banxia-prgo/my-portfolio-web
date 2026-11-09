@@ -135,7 +135,8 @@
   .post-entry { padding: 1rem; }
 }
 
-.toc { position: relative; }
+/* Keep the article table of contents visible while the article scrolls. */
+.toc { position: sticky; top: 88px; align-self: start; }
 .toc-resize-handle { position: absolute; z-index: 3; top: 0; right: -5px; bottom: 0; width: 10px; cursor: col-resize; touch-action: none; }
 .toc-resize-handle::after { content: ""; position: absolute; top: 12px; bottom: 12px; left: 4px; width: 2px; border-radius: 2px; background: transparent; transition: background .18s ease; }
 .toc-resize-handle:hover::after, .toc-resize-handle.is-dragging::after { background: #a99ce4; }
