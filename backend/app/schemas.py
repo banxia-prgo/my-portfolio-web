@@ -122,3 +122,40 @@ class TaxonomyCreate(BaseModel):
 
 class SiteSettingUpdate(BaseModel):
     value: dict
+
+
+class ContentBulkUpdate(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=100)
+    status: str | None = Field(default=None, pattern=r"^(draft|published|archived)$")
+    featured: bool | None = None
+
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value: list[int]) -> list[int]:
+        if len(value) != len(set(value)):
+            raise ValueError("内容 ID 不能重复")
+        return value
+
+
+class ContentBulkDelete(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=100)
+
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value: list[int]) -> list[int]:
+        if len(value) != len(set(value)):
+            raise ValueError("内容 ID 不能重复")
+        return value
+
+
+class ModerationBulkAction(BaseModel):
+    kind: str = Field(pattern=r"^(guestbook|comments)$")
+    ids: list[int] = Field(min_length=1, max_length=200)
+    action: str = Field(pattern=r"^(hide|restore)$")
+
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value: list[int]) -> list[int]:
+        if len(value) != len(set(value)):
+            raise ValueError("记录 ID 不能重复")
+        return value
