@@ -49,3 +49,15 @@ class ProfileUpdate(BaseModel):
         if not normalized:
             raise ValueError("昵称不能为空")
         return normalized
+
+
+class GuestbookMessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("content")
+    @classmethod
+    def normalize_guestbook_content(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("留言内容不能为空")
+        return normalized
