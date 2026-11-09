@@ -252,7 +252,7 @@ async function submit() {
 
     <footer v-if="kind === 'project'" class="project-detail__footer">
       <RouterLink to="/projects/">← 返回项目列表</RouterLink>
-      <a href="https://github.com/banxia-prgo/picture_browser" target="_blank" rel="noopener">GitHub 源码 ↗</a>
+      <a v-if="entry.github" :href="entry.github" target="_blank" rel="noopener noreferrer">GitHub 源码 ↗</a>
     </footer>
   </article>
   <div v-else class="article-loading">正在加载内容，或暂未找到这篇文章。</div>
