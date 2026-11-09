@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db
-from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage, AuditLog
-from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn, AdminUserUpdate
+from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage, AuditLog, ContentItem, ContentCategory, ContentTag, MediaAsset, SiteSetting
+from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn, AdminUserUpdate, ContentCreate, ContentUpdate, TaxonomyCreate, SiteSettingUpdate
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
 from .rate_limit import limit_attempts
@@ -410,3 +410,268 @@ def delete_guestbook_message(
         write_audit_log(db, actor, "guestbook.delete", "guestbook_message", message.id)
     db.commit()
     return {"ok": True}
+
+
+
+def serialize_content(item: ContentItem) -> dict:
+    return {
+        "id": item.id,
+        "kind": item.kind,
+        "slug": item.slug,
+        "title": item.title,
+        "summary": item.summary,
+        "content": item.content,
+        "status": item.status,
+        "featured": item.featured,
+        "sort_order": item.sort_order,
+        "cover_url": item.cover_url,
+        "github_url": item.github_url,
+        "categories": [{"id": c.id, "name": c.name, "slug": c.slug} for c in item.categories],
+        "tags": [{"id": t.id, "name": t.name, "slug": t.slug} for t in item.tags],
+        "published_at": item.published_at,
+        "created_at": item.created_at,
+        "updated_at": item.updated_at,
+    }
+
+
+def apply_taxonomy(db: Session, item: ContentItem, category_ids: list[int], tag_ids: list[int]) -> None:
+    categories = db.scalars(select(ContentCategory).where(ContentCategory.id.in_(category_ids))).all() if category_ids else []
+    tags = db.scalars(select(ContentTag).where(ContentTag.id.in_(tag_ids))).all() if tag_ids else []
+    if len(categories) != len(set(category_ids)):
+        raise HTTPException(status_code=422, detail="包含不存在的分类")
+    if len(tags) != len(set(tag_ids)):
+        raise HTTPException(status_code=422, detail="包含不存在的标签")
+    item.categories = categories
+    item.tags = tags
+
+
+@app.get("/api/content/{kind}")
+def public_content_list(kind: str, limit: int = 100, offset: int = 0, db: Session = Depends(get_db)):
+    if kind not in {"posts", "projects"}:
+        raise HTTPException(status_code=404, detail="内容类型不存在")
+    content_kind = "post" if kind == "posts" else "project"
+    rows = db.scalars(
+        select(ContentItem)
+        .where(ContentItem.kind == content_kind, ContentItem.status == "published")
+        .order_by(ContentItem.featured.desc(), ContentItem.sort_order, ContentItem.published_at.desc())
+        .offset(max(0, offset))
+        .limit(max(1, min(limit, 100)))
+    ).all()
+    return [serialize_content(item) for item in rows]
+
+
+@app.get("/api/content/{kind}/{slug}")
+def public_content_detail(kind: str, slug: str, db: Session = Depends(get_db)):
+    if kind not in {"posts", "projects"}:
+        raise HTTPException(status_code=404, detail="内容类型不存在")
+    content_kind = "post" if kind == "posts" else "project"
+    item = db.scalar(select(ContentItem).where(
+        ContentItem.kind == content_kind,
+        ContentItem.slug == slug,
+        ContentItem.status == "published",
+    ))
+    if not item:
+        raise HTTPException(status_code=404, detail="内容不存在")
+    return serialize_content(item)
+
+
+@app.get("/api/site/profile")
+def public_site_profile(db: Session = Depends(get_db)):
+    setting = db.get(SiteSetting, "profile")
+    return setting.value if setting else {}
+
+
+@app.get("/api/admin/content")
+def admin_content_list(
+    request: Request,
+    kind: str | None = None,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    query = select(ContentItem)
+    if kind in {"post", "project"}:
+        query = query.where(ContentItem.kind == kind)
+    if status in {"draft", "published", "archived"}:
+        query = query.where(ContentItem.status == status)
+    query = query.order_by(ContentItem.updated_at.desc()).offset(max(0, offset)).limit(max(1, min(limit, 100)))
+    return [serialize_content(item) for item in db.scalars(query).all()]
+
+
+@app.post("/api/admin/content", status_code=201)
+def admin_create_content(
+    data: ContentCreate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    if db.scalar(select(ContentItem.id).where(ContentItem.kind == data.kind, ContentItem.slug == data.slug)):
+        raise HTTPException(status_code=409, detail="该内容标识已存在")
+    now = datetime.now(timezone.utc)
+    item = ContentItem(
+        kind=data.kind, slug=data.slug, title=data.title, summary=data.summary,
+        content=data.content, status=data.status, featured=data.featured,
+        sort_order=data.sort_order, cover_url=data.cover_url, github_url=data.github_url,
+        created_by=actor.id, updated_by=actor.id,
+        published_at=now if data.status == "published" else None,
+    )
+    apply_taxonomy(db, item, data.category_ids, data.tag_ids)
+    db.add(item)
+    db.flush()
+    write_audit_log(db, actor, "content.create", data.kind, item.id, data.slug)
+    db.commit()
+    db.refresh(item)
+    return serialize_content(item)
+
+
+@app.patch("/api/admin/content/{content_id}")
+def admin_update_content(
+    content_id: int,
+    data: ContentUpdate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = db.get(ContentItem, content_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="内容不存在")
+    values = data.model_dump(exclude_unset=True)
+    category_ids = values.pop("category_ids", None)
+    tag_ids = values.pop("tag_ids", None)
+    next_slug = values.get("slug", item.slug)
+    if db.scalar(select(ContentItem.id).where(
+        ContentItem.kind == item.kind, ContentItem.slug == next_slug, ContentItem.id != item.id
+    )):
+        raise HTTPException(status_code=409, detail="该内容标识已存在")
+    for key, value in values.items():
+        setattr(item, key, value)
+    if category_ids is not None or tag_ids is not None:
+        apply_taxonomy(
+            db, item,
+            category_ids if category_ids is not None else [c.id for c in item.categories],
+            tag_ids if tag_ids is not None else [t.id for t in item.tags],
+        )
+    if item.status == "published" and item.published_at is None:
+        item.published_at = datetime.now(timezone.utc)
+    item.updated_by = actor.id
+    write_audit_log(db, actor, "content.update", item.kind, item.id, item.slug)
+    db.commit()
+    db.refresh(item)
+    return serialize_content(item)
+
+
+@app.delete("/api/admin/content/{content_id}")
+def admin_delete_content(
+    content_id: int,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = db.get(ContentItem, content_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="内容不存在")
+    write_audit_log(db, actor, "content.delete", item.kind, item.id, item.slug)
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+
+
+@app.get("/api/admin/categories")
+def admin_categories(request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    return db.scalars(select(ContentCategory).order_by(ContentCategory.name)).all()
+
+
+@app.post("/api/admin/categories", status_code=201)
+def admin_create_category(
+    data: TaxonomyCreate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = ContentCategory(name=data.name.strip(), slug=data.slug.strip(), description=data.description)
+    db.add(item)
+    write_audit_log(db, actor, "category.create", "category", data.slug)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "name": item.name, "slug": item.slug, "description": item.description}
+
+
+@app.get("/api/admin/tags")
+def admin_tags(request: Request, db: Session = Depends(get_db)):
+    require_admin(request, db)
+    return db.scalars(select(ContentTag).order_by(ContentTag.name)).all()
+
+
+@app.post("/api/admin/tags", status_code=201)
+def admin_create_tag(
+    data: TaxonomyCreate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = ContentTag(name=data.name.strip(), slug=data.slug.strip())
+    db.add(item)
+    write_audit_log(db, actor, "tag.create", "tag", data.slug)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "name": item.name, "slug": item.slug}
+
+
+@app.put("/api/admin/site-settings/{key}")
+def admin_update_site_setting(
+    key: str,
+    data: SiteSettingUpdate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    if key not in {"profile", "homepage", "seo", "contact", "announcement"}:
+        raise HTTPException(status_code=400, detail="不支持的配置项")
+    setting = db.get(SiteSetting, key)
+    if not setting:
+        setting = SiteSetting(key=key, value=data.value, updated_by=actor.id)
+        db.add(setting)
+    else:
+        setting.value = data.value
+        setting.updated_by = actor.id
+    write_audit_log(db, actor, "site_setting.update", "site_setting", key)
+    db.commit()
+    return {"key": key, "value": setting.value}
+
+
+@app.get("/api/admin/media")
+def admin_media_list(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+):
+    require_admin(request, db)
+    items = db.scalars(
+        select(MediaAsset).order_by(MediaAsset.created_at.desc())
+        .offset(max(0, offset)).limit(max(1, min(limit, 100)))
+    ).all()
+    return [
+        {
+            "id": item.id, "original_name": item.original_name,
+            "public_url": item.public_url, "mime_type": item.mime_type,
+            "size_bytes": item.size_bytes, "alt_text": item.alt_text,
+            "created_at": item.created_at,
+        }
+        for item in items
+    ]
