@@ -145,7 +145,7 @@ onMounted(async () => {
           <div class="bx-about-card__heading"><span class="bx-avatar">半</span><div><h2>关于我</h2><p>一名热爱技术的开发者</p></div></div>
           <p class="bx-about-card__intro">目前专注于计算机视觉、深度学习和工程实践，持续学习，记录成长。</p>
           <div class="bx-about-item"><span>♧</span><div><strong>学习方向</strong><p>机器视觉 · 深度学习 · 工程落地</p></div></div>
-          <div class="bx-about-item"><span>♧</span><div><strong>联系方式</strong><p>暂未公开，敬请期待</p></div></div>
+          <div class="bx-about-item"><span>♧</span><div><strong>联系方式</strong><p><a href="mailto:dhq1015@gmail.com">dhq1015@gmail.com</a></p></div></div>
           <RouterLink class="bx-about-link" to="/resume/">查看我的简历 →</RouterLink>
         </section>
 
