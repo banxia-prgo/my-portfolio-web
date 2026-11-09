@@ -35,7 +35,7 @@ onMounted(async () => {
         </p>
         <div class="bx-home-hero__actions">
           <RouterLink class="bx-btn bx-btn--primary" to="/projects/">♧ 查看我的项目 <span>→</span></RouterLink>
-          <RouterLink class="bx-btn bx-btn--ghost" to="/posts/">▣ 阅读随笔</RouterLink>
+          <RouterLink class="bx-btn bx-btn--ghost" to="/posts/">▣ 阅读文章</RouterLink>
         </div>
       </div>
       <div class="bx-home-hero__poem">在代码构筑的世界里<br>遇见更好的自己<br><span>— 半夏</span></div>
@@ -101,7 +101,7 @@ onMounted(async () => {
                 <h3>机器视觉学习 <span class="bx-tag-study">学习中</span></h3>
                 <p>从 OpenCV 的目标检测与图像处理基础出发，逐步搭建可复现的视觉实验。</p>
                 <div class="bx-project-tags"><span>Python</span><span>OpenCV</span><span>YOLO</span></div>
-                <div class="bx-project-card__foot"><span>学习方向</span><RouterLink to="/resume/">学习计划 →</RouterLink></div>
+                <div class="bx-project-card__foot"><span>学习方向</span><RouterLink to="/about/">学习方向 →</RouterLink></div>
               </div>
             </article>
 
@@ -121,7 +121,7 @@ onMounted(async () => {
 
         <section class="bx-section bx-notes" aria-labelledby="bx-notes-title">
           <div class="bx-section__head">
-            <h2 id="bx-notes-title"><span>✎</span> 最新随笔</h2>
+            <h2 id="bx-notes-title"><span>✎</span> 最新文章</h2>
             <RouterLink to="/posts/">查看全部 →</RouterLink>
           </div>
           <div class="bx-note-list">
@@ -146,7 +146,7 @@ onMounted(async () => {
           <p class="bx-about-card__intro">目前专注于计算机视觉、深度学习和工程实践，持续学习，记录成长。</p>
           <div class="bx-about-item"><span>♧</span><div><strong>学习方向</strong><p>机器视觉 · 深度学习 · 工程落地</p></div></div>
           <div class="bx-about-item"><span>♧</span><div><strong>联系方式</strong><p><a href="mailto:dhq1015@gmail.com">dhq1015@gmail.com</a></p></div></div>
-          <RouterLink class="bx-about-link" to="/resume/">查看我的简历 →</RouterLink>
+          <RouterLink class="bx-about-link" to="/resume/">了解更多关于我 →</RouterLink>
         </section>
 
         <section class="bx-learning-card">
@@ -159,7 +159,7 @@ onMounted(async () => {
         <section class="bx-stats-card">
           <div class="bx-section__head"><h2><span>▥</span> 数据一览</h2></div>
           <div class="bx-stats-grid">
-            <RouterLink to="/posts/"><strong>✎　{{ postCount }}</strong><span>原创随笔</span></RouterLink>
+            <RouterLink to="/posts/"><strong>✎　{{ postCount }}</strong><span>文章</span></RouterLink>
             <RouterLink to="/projects/"><strong>‹/›　{{ projectCount }}</strong><span>开源项目</span></RouterLink>
             <div><strong>♧　3</strong><span>学习方向</span></div>
             <div><strong>∞</strong><span>持续成长</span></div>
