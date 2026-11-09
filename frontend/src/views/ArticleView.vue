@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
-import { loadCatalog, type ArticleContent } from '@/api/content'
+import { invalidateCatalog, loadCatalog, type ArticleContent } from '@/api/content'
 import { api } from '@/api/client'
 
 const route = useRoute()
-const kind = route.path.startsWith('/projects/') ? 'project' : 'post'
+const kind = computed(() => route.path.startsWith('/projects/') ? 'project' : 'post')
 const entry = ref<ArticleContent | null>(null)
 const liked = ref(false)
 const saved = ref(false)
@@ -52,21 +52,43 @@ const rendered = computed(() => {
   return renderer.render(entry.value.content || '')
 })
 
-onMounted(async () => {
-  const data = await loadCatalog()
-  const list = kind === 'project' ? data.projects : data.posts
-  entry.value = list.find(item => item.slug === String(route.params.slug)) || null
-  await nextTick()
-  initTableOfContents()
-  if (kind === 'post') {
-    try {
-      const response = await api.get('/api/articles/' + String(route.params.slug) + '/comments')
-      comments.value = response.data
-    } catch {
-      // The comments endpoint may not be available in the local API yet.
+let loadSequence = 0
+
+async function loadEntry() {
+  const sequence = ++loadSequence
+  tocCleanup?.()
+  tocCleanup = null
+  entry.value = null
+  comments.value = []
+  liked.value = false
+  saved.value = false
+  notice.value = ''
+
+  try {
+    const data = await loadCatalog()
+    if (sequence !== loadSequence) return
+    const list = kind.value === 'project' ? data.projects : data.posts
+    entry.value = list.find(item => item.slug === String(route.params.slug)) || null
+    await nextTick()
+    if (sequence !== loadSequence) return
+    initTableOfContents()
+
+    if (kind.value === 'post' && entry.value) {
+      try {
+        const response = await api.get('/api/articles/' + encodeURIComponent(String(route.params.slug)) + '/comments')
+        if (sequence === loadSequence) comments.value = response.data
+      } catch {
+        // Comments remain optional when the API is temporarily unavailable.
+      }
     }
+  } catch {
+    if (sequence === loadSequence) entry.value = null
   }
-})
+}
+
+watch(() => [route.path, route.params.slug], () => {
+  void loadEntry()
+}, { immediate: true })
 
 
 function initTableOfContents() {
@@ -184,11 +206,11 @@ function initTableOfContents() {
   }
 }
 
-onBeforeUnmount(() => tocCleanup?.())
+onBeforeUnmount(() => { loadSequence += 1; tocCleanup?.() })
 
 async function action(type: 'likes' | 'bookmarks') {
   try {
-    const response = await api.post('/api/articles/' + String(route.params.slug) + '/' + type)
+    const response = await api.post('/api/articles/' + encodeURIComponent(String(route.params.slug)) + '/' + type)
     if (type === 'likes') liked.value = response.data.active
     else saved.value = response.data.active
   } catch {
@@ -199,10 +221,10 @@ async function action(type: 'likes' | 'bookmarks') {
 async function submit() {
   if (!comment.value.trim()) return
   try {
-    await api.post('/api/comments', { article_slug: route.params.slug, content: comment.value })
+    await api.post('/api/comments', { article_slug: String(route.params.slug), content: comment.value })
     comment.value = ''
     notice.value = '评论已提交'
-    const response = await api.get('/api/articles/' + String(route.params.slug) + '/comments')
+    const response = await api.get('/api/articles/' + encodeURIComponent(String(route.params.slug)) + '/comments')
     comments.value = response.data
   } catch {
     notice.value = '请先登录后发表评论。'
