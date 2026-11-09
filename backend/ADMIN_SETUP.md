@@ -28,10 +28,15 @@ Run from the backend container or the backend deployment environment:
 alembic upgrade head
 ```
 
-This applies revision `0003_roles_audit`, adding `users.role` and `audit_logs`. Existing accounts receive the `user` role by default; the configured allowlist grants the initial administrator access without a public role-escalation endpoint.
+Run `alembic upgrade head` to apply revisions `0003_roles_audit` and `0004_cms_content`. They add the role/audit tables and CMS content, category, tag, media metadata, and site-setting tables. Existing accounts receive the `user` role by default; the configured allowlist grants initial administrator access without a public role-escalation endpoint.
 
 ## Verify
 
 Log in using the configured account, then request `GET /api/admin/me` with the session cookie. It should return `role: admin`. A normal account should receive HTTP 403.
 
 Keep `ADMIN_EMAILS` private. Do not send it to the browser, put it in `VITE_*` variables, or add it to Git.
+
+
+## Administrator interface
+
+After deployment and successful configuration, sign in with the allowlisted account and open `https://www.banxia.xin/admin/`. The server validates admin access through `GET /api/admin/me`; hiding the link in the frontend is not the security boundary.
