@@ -62,4 +62,4 @@ jobs:
         run: alembic upgrade head
 
       - name: Verify API schema loads
-        run: python -c "from sqlalchemy.orm import configure_mappers; from app.main import app; configure_mappers(); schema = app.openapi(); assert app.title == '半夏小筑 API'; assert '/api/admin/content' in schema['paths']; assert '/api/content/{kind}/{slug}' in schema['paths']; print('API schema and ORM mappings OK')"
+        run: python -c "from sqlalchemy.orm import configure_mappers; from app.main import app; configure_mappers(); schema = app.openapi(); assert app.title == '半夏小筑 API'; paths = schema['paths']; assert '/api/admin/content' in paths; assert '/api/admin/content-bulk' in paths; assert '/api/admin/content/bulk-delete' in paths; assert '/api/admin/moderation/bulk' in paths; assert '/api/admin/media/upload' in paths; assert '/api/admin/media/{media_id}' in paths; assert '/api/content/{kind}/{slug}' in paths; print('API schema, media, bulk actions, and moderation routes OK')"

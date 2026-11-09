@@ -1,16 +1,27 @@
 from datetime import datetime, timezone
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, Header
+from io import BytesIO
+import os
+from pathlib import Path
+from uuid import uuid4
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, Header, UploadFile, File, Form
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db
 from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage, AuditLog, ContentItem, ContentCategory, ContentTag, MediaAsset, SiteSetting
-from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn, AdminUserUpdate, ContentCreate, ContentUpdate, TaxonomyCreate, SiteSettingUpdate
+from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn, AdminUserUpdate, ContentCreate, ContentUpdate, TaxonomyCreate, SiteSettingUpdate, ContentBulkUpdate, ContentBulkDelete, ModerationBulkAction
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
 from .rate_limit import limit_attempts
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 app = FastAPI(title="半夏小筑 API", version="1.0.0")
+
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT", "media")).resolve()
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+MAX_IMAGE_BYTES = 4 * 1024 * 1024
+app.mount("/media", StaticFiles(directory=str(MEDIA_ROOT)), name="media")
 app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin], allow_credentials=True, allow_methods=["GET","POST","PATCH","DELETE","OPTIONS"], allow_headers=["Content-Type","X-CSRF-Token"])
 
 SESSION_COOKIE = "bx_session"
@@ -391,7 +402,7 @@ def delete_comment(
     if comment.user_id != actor.id and not is_admin_user(actor):
         raise HTTPException(status_code=403, detail="无权删除这条评论")
     comment.is_deleted = True
-    if is_admin_user(actor) and comment.user_id != actor.id:
+    if is_admin_user(actor):
         write_audit_log(db, actor, "comment.delete", "comment", comment.id)
     db.commit()
     return {"ok": True}
@@ -412,7 +423,7 @@ def delete_guestbook_message(
     if message.user_id != actor.id and not is_admin_user(actor):
         raise HTTPException(status_code=403, detail="无权删除这条留言")
     message.is_deleted = True
-    if is_admin_user(actor) and message.user_id != actor.id:
+    if is_admin_user(actor):
         write_audit_log(db, actor, "guestbook.delete", "guestbook_message", message.id)
     db.commit()
     return {"ok": True}
@@ -672,15 +683,7 @@ def admin_media_list(
         select(MediaAsset).order_by(MediaAsset.created_at.desc())
         .offset(max(0, offset)).limit(max(1, min(limit, 100)))
     ).all()
-    return [
-        {
-            "id": item.id, "original_name": item.original_name,
-            "public_url": item.public_url, "mime_type": item.mime_type,
-            "size_bytes": item.size_bytes, "alt_text": item.alt_text,
-            "created_at": item.created_at,
-        }
-        for item in items
-    ]
+    return [_media_payload(item) for item in items]
 
 
 @app.get("/api/admin/guestbook")
@@ -731,4 +734,217 @@ def admin_restore_comment(comment_id: int, request: Request,
     item.is_deleted = False
     write_audit_log(db, actor, "comment.restore", "comment", item.id)
     db.commit()
+    return {"ok": True}
+
+
+@app.patch("/api/admin/content-bulk")
+def admin_bulk_update_content(
+    data: ContentBulkUpdate,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    changes = data.model_dump(exclude_unset=True, exclude={"ids"})
+    category_ids = changes.pop("category_ids", None)
+    tag_ids = changes.pop("tag_ids", None)
+    if not changes and category_ids is None and tag_ids is None:
+        raise HTTPException(status_code=422, detail="至少选择一个需要批量修改的字段")
+    items = db.scalars(select(ContentItem).where(ContentItem.id.in_(data.ids))).all()
+    if len(items) != len(data.ids):
+        raise HTTPException(status_code=404, detail="部分内容不存在，请刷新列表后重试")
+    now = datetime.now(timezone.utc)
+    for item in items:
+        for key, value in changes.items():
+            setattr(item, key, value)
+        if category_ids is not None or tag_ids is not None:
+            apply_taxonomy(
+                db, item,
+                category_ids if category_ids is not None else [category.id for category in item.categories],
+                tag_ids if tag_ids is not None else [tag.id for tag in item.tags],
+            )
+        if item.status == "published" and item.published_at is None:
+            item.published_at = now
+        item.updated_by = actor.id
+    fields = list(changes)
+    if category_ids is not None:
+        fields.append("category_ids")
+    if tag_ids is not None:
+        fields.append("tag_ids")
+    write_audit_log(db, actor, "content.bulk_update", "content", None,
+                    f"ids={','.join(map(str, data.ids))}; fields={','.join(fields)}")
+    db.commit()
+    return {"ok": True, "updated": len(items)}
+
+
+@app.post("/api/admin/content/bulk-delete")
+def admin_bulk_delete_content(
+    data: ContentBulkDelete,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    items = db.scalars(select(ContentItem).where(ContentItem.id.in_(data.ids))).all()
+    if len(items) != len(data.ids):
+        raise HTTPException(status_code=404, detail="部分内容不存在，请刷新列表后重试")
+    for item in items:
+        write_audit_log(db, actor, "content.bulk_delete", item.kind, item.id, item.slug)
+        db.delete(item)
+    db.commit()
+    return {"ok": True, "deleted": len(items)}
+
+
+@app.post("/api/admin/moderation/bulk")
+def admin_bulk_moderate(
+    data: ModerationBulkAction,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    model = GuestbookMessage if data.kind == "guestbook" else Comment
+    items = db.scalars(select(model).where(model.id.in_(data.ids))).all()
+    if len(items) != len(data.ids):
+        raise HTTPException(status_code=404, detail="部分记录不存在，请刷新列表后重试")
+    hidden = data.action == "hide"
+    for item in items:
+        if item.is_deleted != hidden:
+            item.is_deleted = hidden
+            write_audit_log(
+                db, actor,
+                f"{data.kind}.{'hide' if hidden else 'restore'}",
+                "guestbook_message" if data.kind == "guestbook" else "comment",
+                item.id,
+            )
+    db.commit()
+    return {"ok": True, "updated": len(items), "is_deleted": hidden}
+
+
+def _media_payload(item: MediaAsset) -> dict:
+    return {
+        "id": item.id,
+        "original_name": item.original_name,
+        "public_url": item.public_url,
+        "thumbnail_url": f"{settings.media_public_origin.rstrip('/')}/media/thumb-{item.stored_name.rsplit('.', 1)[0]}.webp",
+        "mime_type": item.mime_type,
+        "size_bytes": item.size_bytes,
+        "alt_text": item.alt_text,
+        "created_at": item.created_at,
+    }
+
+
+@app.post("/api/admin/media/upload", status_code=201)
+async def admin_upload_media(
+    request: Request,
+    file: UploadFile = File(...),
+    alt_text: str = Form(default=""),
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    raw = await file.read(MAX_IMAGE_BYTES + 1)
+    if not raw or len(raw) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="图片不能为空，且单张图片不能超过 4 MiB")
+    try:
+        with Image.open(BytesIO(raw)) as probe:
+            image_format = (probe.format or "").upper()
+            width, height = probe.size
+            if image_format not in {"JPEG", "PNG", "WEBP"}:
+                raise HTTPException(status_code=415, detail="仅支持 JPG、PNG、WEBP 图片")
+            if width < 1 or height < 1 or width * height > 40000000:
+                raise HTTPException(status_code=413, detail="图片尺寸过大")
+            probe.verify()
+        with Image.open(BytesIO(raw)) as source:
+            source = ImageOps.exif_transpose(source)
+            source.load()
+            if image_format == "JPEG":
+                normalized = source.convert("RGB")
+                extension, mime = ".jpg", "image/jpeg"
+                output_format = "JPEG"
+            elif image_format == "PNG":
+                normalized = source.convert("RGBA") if "A" in source.getbands() else source.convert("RGB")
+                extension, mime = ".png", "image/png"
+                output_format = "PNG"
+            else:
+                normalized = source.convert("RGBA") if "A" in source.getbands() else source.convert("RGB")
+                extension, mime = ".webp", "image/webp"
+                output_format = "WEBP"
+            original_buffer = BytesIO()
+            if output_format == "JPEG":
+                save_options = {"quality": 90, "optimize": True}
+            elif output_format == "PNG":
+                save_options = {"optimize": True}
+            else:
+                save_options = {"quality": 90, "method": 6}
+            normalized.save(original_buffer, format=output_format, **save_options)
+            original_bytes = original_buffer.getvalue()
+            thumb = normalized.copy()
+            thumb.thumbnail((640, 640), Image.Resampling.LANCZOS)
+            thumb_buffer = BytesIO()
+            thumb.save(thumb_buffer, format="WEBP", quality=82, method=6)
+            thumbnail_bytes = thumb_buffer.getvalue()
+    except HTTPException:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+        raise HTTPException(status_code=400, detail="无法识别图片文件或图片内容损坏")
+    if len(original_bytes) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="图片处理后仍超过 4 MiB")
+    stored_name = f"{uuid4().hex}{extension}"
+    original_path = MEDIA_ROOT / stored_name
+    thumbnail_path = MEDIA_ROOT / f"thumb-{stored_name.rsplit('.', 1)[0]}.webp"
+    original_path.write_bytes(original_bytes)
+    thumbnail_path.write_bytes(thumbnail_bytes)
+    public_url = f"{settings.media_public_origin.rstrip('/')}/media/{stored_name}"
+    safe_name = Path(file.filename or "image").name[:255]
+    item = MediaAsset(
+        original_name=safe_name,
+        stored_name=stored_name,
+        public_url=public_url,
+        mime_type=mime,
+        size_bytes=len(original_bytes),
+        alt_text=alt_text.strip()[:300],
+        uploaded_by=actor.id,
+    )
+    try:
+        db.add(item)
+        db.flush()
+        write_audit_log(db, actor, "media.upload", "media_asset", item.id, safe_name)
+        db.commit()
+        db.refresh(item)
+    except Exception:
+        db.rollback()
+        original_path.unlink(missing_ok=True)
+        thumbnail_path.unlink(missing_ok=True)
+        raise
+    return _media_payload(item)
+
+
+@app.delete("/api/admin/media/{media_id}")
+def admin_delete_media(
+    media_id: int,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    actor = require_admin(request, db)
+    item = db.get(MediaAsset, media_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="图片不存在")
+    used = db.scalar(select(ContentItem.id).where(
+        or_(ContentItem.cover_url == item.public_url, ContentItem.content.contains(item.public_url))
+    ).limit(1))
+    if used:
+        raise HTTPException(status_code=409, detail="该图片正在被文章或项目使用，请先替换引用")
+    stored_name = item.stored_name
+    db.delete(item)
+    write_audit_log(db, actor, "media.delete", "media_asset", media_id, stored_name)
+    db.commit()
+    (MEDIA_ROOT / stored_name).unlink(missing_ok=True)
+    (MEDIA_ROOT / f"thumb-{stored_name.rsplit('.', 1)[0]}.webp").unlink(missing_ok=True)
     return {"ok": True}
