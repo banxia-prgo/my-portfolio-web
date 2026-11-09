@@ -128,6 +128,9 @@ class ContentBulkUpdate(BaseModel):
     ids: list[int] = Field(min_length=1, max_length=100)
     status: str | None = Field(default=None, pattern=r"^(draft|published|archived)$")
     featured: bool | None = None
+    sort_order: int | None = None
+    category_ids: list[int] | None = Field(default=None, max_length=20)
+    tag_ids: list[int] | None = Field(default=None, max_length=30)
 
     @field_validator("ids")
     @classmethod
