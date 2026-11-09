@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { Menu, X, ArrowUpRight } from 'lucide-vue-next'
+import { Menu, X, ArrowUpRight, UserRound } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const open = ref(false)
 const route = useRoute()
+const auth = useAuthStore()
 const links = [
   { label: '首页', to: '/' },
   { label: '文章', to: '/posts/' },
@@ -29,7 +31,13 @@ const links = [
         >{{ link.label }}</RouterLink>
       </nav>
       <div class="header-actions">
-        <RouterLink class="login-link" to="/login/">登录 <ArrowUpRight :size="15" /></RouterLink>
+        <RouterLink v-if="auth.user" class="login-link" to="/profile/" :aria-label="`个人中心：${auth.user.nickname}`">
+          <UserRound :size="15" /> {{ auth.user.nickname }}
+        </RouterLink>
+        <RouterLink v-else-if="auth.initialized" class="login-link" to="/login/">
+          登录 <ArrowUpRight :size="15" />
+        </RouterLink>
+        <span v-else class="login-link" aria-label="正在恢复登录状态" aria-live="polite">…</span>
         <button class="mobile-menu" :aria-label="open ? '关闭菜单' : '打开菜单'" @click="open = !open">
           <X v-if="open" :size="21" />
           <Menu v-else :size="21" />
@@ -38,7 +46,8 @@ const links = [
     </div>
     <nav v-if="open" class="mobile-nav" aria-label="移动端导航">
       <RouterLink v-for="link in links" :key="link.to" :to="link.to" @click="open = false">{{ link.label }}</RouterLink>
-      <RouterLink to="/login/" @click="open = false">登录 / 注册</RouterLink>
+      <RouterLink v-if="auth.user" to="/profile/" @click="open = false">{{ auth.user.nickname }} · 个人中心</RouterLink>
+      <RouterLink v-else-if="auth.initialized" to="/login/" @click="open = false">登录 / 注册</RouterLink>
     </nav>
   </header>
 </template>

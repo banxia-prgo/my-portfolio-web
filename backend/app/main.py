@@ -11,7 +11,7 @@ from .settings import settings
 from .rate_limit import limit_attempts
 
 app = FastAPI(title="半夏小筑 API", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin], allow_credentials=True, allow_methods=["GET","POST","DELETE","OPTIONS"], allow_headers=["Content-Type","X-CSRF-Token"])
+app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin], allow_credentials=True, allow_methods=["GET","POST","PATCH","DELETE","OPTIONS"], allow_headers=["Content-Type","X-CSRF-Token"])
 
 SESSION_COOKIE = "bx_session"
 CSRF_COOKIE = "bx_csrf"
