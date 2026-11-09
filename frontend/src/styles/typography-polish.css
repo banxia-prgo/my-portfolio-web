@@ -1,0 +1,199 @@
+/*
+ * Banxia Xiaozhu — site-wide typography & visual polish
+ * Keep the existing lavender / aqua editorial identity while making
+ * Chinese text, controls and reading surfaces more consistent.
+ */
+:root {
+  --bx-font-ui: "Manrope", "Inter", "PingFang SC", "Microsoft YaHei UI",
+    "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC",
+    "WenQuanYi Micro Hei", system-ui, sans-serif;
+  --bx-font-reading: "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI",
+    "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC",
+    system-ui, sans-serif;
+  --bx-font-code: "JetBrains Mono", "Cascadia Code", "SFMono-Regular",
+    Consolas, monospace;
+  --bx-text: #302c43;
+  --bx-muted: #777487;
+  --bx-border: #e9e5f2;
+  --bx-surface: rgba(255, 255, 255, .88);
+  --bx-shadow-soft: 0 12px 34px rgba(72, 59, 117, .07);
+  --el-font-family: var(--bx-font-ui);
+}
+[data-theme="dark"] {
+  --bx-text: #f1eefb;
+  --bx-muted: #b4aec9;
+  --bx-border: #45405c;
+  --bx-surface: rgba(48, 42, 73, .9);
+  --bx-shadow-soft: 0 14px 38px rgba(0, 0, 0, .2);
+}
+
+html {
+  font-family: var(--bx-font-ui);
+  font-kerning: normal;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+body, #app, button, input, textarea, select,
+.el-button, .el-input, .el-input__wrapper, .el-textarea__inner,
+.el-select, .el-select__wrapper, .el-dialog, .el-message,
+.el-dropdown-menu, .el-table, .el-pagination, .el-form-item__label {
+  font-family: var(--bx-font-ui) !important;
+}
+body {
+  color: var(--bx-text);
+  font-size: 15px;
+  line-height: 1.75;
+  letter-spacing: .005em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+::selection {
+  color: #40366f;
+  background: rgba(177, 164, 232, .28);
+}
+p, li, dd, blockquote {
+  text-wrap: pretty;
+}
+p {
+  line-height: 1.85;
+}
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary, var(--bx-text));
+  font-family: var(--bx-font-ui);
+  font-weight: 700;
+  line-height: 1.38;
+  text-wrap: balance;
+}
+.page-title,
+.archive-header h1,
+.project-archive__header h1,
+.post-header h1 {
+  font-weight: 750;
+  letter-spacing: -.035em;
+  line-height: 1.28;
+}
+.post-header h1 {
+  line-height: 1.35;
+}
+.banxia-portal-hero h1 {
+  font-weight: 750;
+  letter-spacing: -.055em;
+  line-height: 1.08;
+}
+.section-heading h2,
+.banxia-portal-section__heading h2 {
+  font-weight: 700;
+  letter-spacing: -.035em;
+}
+.eyebrow, .banxia-kicker, .entry-meta, .post-meta,
+.project-archive__meta, .archive-results {
+  font-family: var(--bx-font-ui);
+  letter-spacing: .045em;
+}
+.brand, .logo .brand, .brand-copy strong, .footer-mark {
+  font-family: var(--bx-font-reading);
+}
+.brand-copy strong, .footer-mark {
+  font-weight: 750;
+  letter-spacing: .045em;
+}
+.page-lead, .archive-description, .project-archive__intro,
+.post-description, .entry-content {
+  font-size: .94rem;
+  line-height: 1.95;
+  letter-spacing: .01em;
+}
+.post-content, .markdown-body {
+  font-family: var(--bx-font-reading);
+  font-size: 1rem;
+  line-height: 2;
+  letter-spacing: .012em;
+}
+.post-content h2, .post-content h3, .post-content h4 {
+  font-family: var(--bx-font-ui);
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+.post-content code, .post-content pre, code, pre, kbd, samp {
+  font-family: var(--bx-font-code) !important;
+}
+.post-content pre {
+  line-height: 1.8;
+  tab-size: 2;
+}
+.post-content blockquote {
+  line-height: 1.9;
+}
+a, button, input, textarea, select {
+  -webkit-tap-highlight-color: transparent;
+}
+a {
+  text-underline-offset: .2em;
+}
+button, .el-button {
+  font-weight: 600;
+}
+input, textarea, select,
+.el-input__wrapper, .el-textarea__inner, .el-select__wrapper {
+  font-size: .9rem;
+}
+:focus-visible {
+  outline: 3px solid rgba(139, 121, 214, .42);
+  outline-offset: 3px;
+}
+.post-entry, .project-archive-card, .banxia-portal-project-card,
+.auth-card, .toc {
+  box-shadow: var(--bx-shadow-soft);
+}
+.post-entry, .project-archive-card, .banxia-portal-project-card,
+.auth-card, .archive-search, .project-search,
+.comment-form textarea, .auth-card label {
+  transition: border-color .2s ease, box-shadow .2s ease,
+    transform .2s ease, background-color .2s ease;
+}
+.post-entry:hover, .project-archive-card:hover,
+.banxia-portal-project-card:hover {
+  box-shadow: 0 16px 42px rgba(83, 68, 135, .11);
+}
+.archive-search:focus-within, .project-search:focus-within,
+.comment-form textarea:focus, .auth-card label:focus-within {
+  border-color: #a99ce4;
+  box-shadow: 0 0 0 4px rgba(169, 156, 228, .12);
+}
+.el-input__wrapper, .el-select__wrapper {
+  min-height: 38px;
+  border-radius: 10px;
+}
+.el-button {
+  min-height: 34px;
+  border-radius: 9px;
+}
+.el-dialog {
+  border-radius: 18px;
+  overflow: hidden;
+}
+.el-dialog__title {
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.el-table {
+  font-size: .88rem;
+}
+.el-table th.el-table__cell {
+  font-weight: 700;
+}
+@media (max-width: 720px) {
+  body { font-size: 14px; }
+  .post-content, .markdown-body { font-size: .96rem; line-height: 1.95; }
+  .page-title, .archive-header h1, .project-archive__header h1 {
+    letter-spacing: -.025em;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
