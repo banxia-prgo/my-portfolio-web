@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db
-from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark
-from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate
+from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage
+from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
 from .rate_limit import limit_attempts
@@ -170,3 +170,46 @@ def article_stats(slug: str, request: Request, db: Session = Depends(get_db)):
     liked = bool(user_id and db.scalar(select(ArticleLike.id).where(ArticleLike.article_slug == slug, ArticleLike.user_id == user_id)))
     bookmarked = bool(user_id and db.scalar(select(ArticleBookmark.id).where(ArticleBookmark.article_slug == slug, ArticleBookmark.user_id == user_id)))
     return {"likes": likes, "comments": comments, "bookmarks": bookmarks, "liked": liked, "bookmarked": bookmarked}
+
+
+@app.get("/api/guestbook/messages")
+def list_guestbook_messages(db: Session = Depends(get_db)):
+    rows = db.execute(
+        select(GuestbookMessage, User)
+        .join(User)
+        .where(GuestbookMessage.is_deleted.is_(False))
+        .order_by(GuestbookMessage.created_at.desc())
+        .limit(100)
+    ).all()
+    return [
+        {
+            "id": item.id,
+            "content": item.content,
+            "nickname": user.nickname,
+            "created_at": item.created_at,
+        }
+        for item, user in rows
+    ]
+
+
+@app.post("/api/guestbook/messages", status_code=201)
+def create_guestbook_message(
+    data: GuestbookMessageIn,
+    request: Request,
+    x_csrf_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_csrf(request, x_csrf_token)
+    user = current_user(request, db)
+    limit_attempts(request, key="guestbook", maximum=5, window_seconds=3600)
+    content = data.content
+    item = GuestbookMessage(user_id=user.id, content=content)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": item.id,
+        "content": item.content,
+        "nickname": user.nickname,
+        "created_at": item.created_at,
+    }

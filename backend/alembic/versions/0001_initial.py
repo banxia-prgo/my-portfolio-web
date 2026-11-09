@@ -12,8 +12,15 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+
+def _legacy_tables():
+    # Keep the original migration stable as newer models are added.
+    return [table for table in Base.metadata.sorted_tables if table.name != "guestbook_messages"]
+
+
 def upgrade():
-    Base.metadata.create_all(bind=op.get_bind())
+    Base.metadata.create_all(bind=op.get_bind(), tables=_legacy_tables())
+
 
 def downgrade():
-    Base.metadata.drop_all(bind=op.get_bind())
+    Base.metadata.drop_all(bind=op.get_bind(), tables=_legacy_tables())
