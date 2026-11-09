@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useRoute } from 'vue-router'
 import { api } from '@/api/client'
+import { useAuthStore } from '@/stores/auth'
 
 interface GuestbookMessage { id: number; content: string; nickname: string; created_at: string }
 const route = useRoute()
+const auth = useAuthStore()
+const isLoggedIn = computed(() => Boolean(auth.user))
 const messages = ref<GuestbookMessage[]>([])
 const content = ref('')
-const isLoggedIn = ref(false)
 const loading = ref(true)
 const submitting = ref(false)
 const notice = ref('')
@@ -21,13 +23,7 @@ async function loadMessages() {
 
 onMounted(async () => {
   try {
-    await loadMessages()
-    try {
-      await api.get('/api/users/me')
-      isLoggedIn.value = true
-    } catch {
-      isLoggedIn.value = false
-    }
+    await Promise.all([loadMessages(), auth.initialize()])
   } catch (e) {
     error.value = e instanceof Error ? e.message : '留言暂时无法加载，请稍后再试。'
   } finally {
@@ -36,6 +32,11 @@ onMounted(async () => {
 })
 
 async function submitMessage() {
+  if (!auth.user) {
+    error.value = '登录状态已失效，请重新登录后再留言。'
+    auth.clearUser()
+    return
+  }
   if (!content.value.trim() || submitting.value) return
   submitting.value = true
   notice.value = ''
@@ -46,7 +47,9 @@ async function submitMessage() {
     notice.value = '留言已发布，感谢你的分享。'
     await loadMessages()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '留言提交失败，请稍后重试。'
+    const message = e instanceof Error ? e.message : '留言提交失败，请稍后重试。'
+    if (message.includes('请先登录') || message.includes('登录已过期')) auth.clearUser()
+    error.value = message
   } finally {
     submitting.value = false
   }
