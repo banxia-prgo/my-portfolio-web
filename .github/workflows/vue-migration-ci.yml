@@ -1,4 +1,4 @@
-name: Vue migration CI
+name: Application CI
 
 on:
   push:
@@ -6,46 +6,12 @@ on:
   pull_request:
     branches: [main, vue-migration]
     paths:
-      - "content/**"
-      - "static/**"
       - "frontend/**"
       - "backend/**"
-      - "scripts/**"
+      - "docs/**"
       - ".github/workflows/vue-migration-ci.yml"
 
 jobs:
-  content-migration:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r scripts/requirements-migration.txt
-      - run: python scripts/migrate_hugo_content.py
-      - name: Validate migrated content
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          root = Path("frontend/public/content")
-          catalog = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
-          resume = json.loads((root / "resume.json").read_text(encoding="utf-8"))
-
-          assert len(catalog["posts"]) == 2, f"Expected 2 posts, got {len(catalog['posts'])}"
-          assert len(catalog["projects"]) == 1, f"Expected 1 project, got {len(catalog['projects'])}"
-          assert len(resume) == 1, f"Expected 1 resume section, got {len(resume)}"
-
-          project = catalog["projects"][0]
-          assert project["title"] == "图片浏览器"
-          assert project["github"] == "https://github.com/banxia-prgo/picture_browser"
-          assert project["tags"] == ["C++11", "Qt Widgets", "Qt Creator"]
-          assert all(item.get("content", "").strip() for item in catalog["posts"] + catalog["projects"])
-          assert resume[0]["content"].strip()
-          print("Content migration validation passed: 2 posts, 1 project, 1 resume section.")
-          PY
-
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -56,7 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
       - run: npm run build
 
   backend:
