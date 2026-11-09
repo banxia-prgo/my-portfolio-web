@@ -62,4 +62,4 @@ jobs:
         run: alembic upgrade head
 
       - name: Verify API schema loads
-        run: python -c "from app.main import app; assert app.title == '半夏小筑 API'; print('API import OK')"
+        run: python -c "from sqlalchemy.orm import configure_mappers; from app.main import app; configure_mappers(); schema = app.openapi(); assert app.title == '半夏小筑 API'; assert '/api/admin/content' in schema['paths']; assert '/api/content/{kind}/{slug}' in schema['paths']; print('API schema and ORM mappings OK')"
