@@ -19,3 +19,6 @@ __pycache__/
 
 # Logs
 *.log
+
+# Cloudflare Wrangler local state (never commit account metadata)
+.wrangler/
