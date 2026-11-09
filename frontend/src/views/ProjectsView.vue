@@ -16,7 +16,8 @@ onMounted(async () => {
 const filtered = computed(() => {
   const q = query.value.trim().toLocaleLowerCase()
   return projects.value.filter(project =>
-    [project.title, project.summary, ...(project.tags || [])].join(' ').toLocaleLowerCase().includes(q)
+    [project.title, project.summary, ...(project.tags || []), ...(project.tech || [])]
+      .join(' ').toLocaleLowerCase().includes(q)
   )
 })
 </script>
@@ -54,13 +55,13 @@ const filtered = computed(() => {
         <div class="project-archive-card__body">
           <div class="project-archive-card__eyebrow">
             <time>{{ project.date?.slice(0, 10) }}</time>
-            <span>{{ (project.tags || []).join(' · ') || '开发实践' }}</span>
+            <span>{{ (project.tags?.length ? project.tags : project.tech || []).join(' · ') || '开发实践' }}</span>
           </div>
           <h2><RouterLink :to="project.href">{{ project.title }}</RouterLink></h2>
           <p class="project-archive-card__summary">{{ project.summary }}</p>
           <div class="project-archive-card__links">
             <RouterLink :to="project.href">查看项目详情 ↗</RouterLink>
-            <a v-if="project.slug === '图片浏览器'" href="https://github.com/banxia-prgo/picture_browser" target="_blank" rel="noopener">GitHub 源码 ↗</a>
+            <a v-if="project.github" :href="project.github" target="_blank" rel="noopener noreferrer">GitHub 源码 ↗</a>
           </div>
         </div>
       </article>
