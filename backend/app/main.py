@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db
 from .models import User, UserSession, Comment, ArticleLike, ArticleBookmark, GuestbookMessage
-from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate
+from .schemas import RegisterIn, LoginIn, UserOut, CommentIn, ProfileUpdate, GuestbookMessageIn
 from .security import hash_password, verify_password, new_session_token, token_digest, session_expiry, new_csrf_token
 from .settings import settings
 from .rate_limit import limit_attempts
@@ -194,7 +194,7 @@ def list_guestbook_messages(db: Session = Depends(get_db)):
 
 @app.post("/api/guestbook/messages", status_code=201)
 def create_guestbook_message(
-    data: dict,
+    data: GuestbookMessageIn,
     request: Request,
     x_csrf_token: str | None = Header(default=None),
     db: Session = Depends(get_db),
@@ -202,14 +202,7 @@ def create_guestbook_message(
     require_csrf(request, x_csrf_token)
     user = current_user(request, db)
     limit_attempts(request, key="guestbook", maximum=5, window_seconds=3600)
-    content = data.get("content")
-    if not isinstance(content, str):
-        raise HTTPException(status_code=422, detail="留言内容不能为空")
-    content = content.strip()
-    if not content:
-        raise HTTPException(status_code=422, detail="留言内容不能为空")
-    if len(content) > 2000:
-        raise HTTPException(status_code=422, detail="留言不能超过 2000 字")
+    content = data.content
     item = GuestbookMessage(user_id=user.id, content=content)
     db.add(item)
     db.commit()
