@@ -8,7 +8,15 @@ import GuestbookView from '@/views/GuestbookView.vue'
 import AuthView from '@/views/AuthView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
+import AdminView from '@/views/AdminView.vue'
 import { api } from '@/api/client'
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+    requiresAdmin?: boolean
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(),
@@ -26,11 +34,24 @@ const router = createRouter({
     { path: '/login/', component: AuthView, props: { mode: 'login' } },
     { path: '/register/', component: AuthView, props: { mode: 'register' } },
     { path: '/profile/', component: ProfileView, meta: { requiresAuth: true } },
+    { path: '/admin/', component: AdminView, meta: { requiresAdmin: true } },
     { path: '/:pathMatch(.*)*', component: NotFoundView },
   ],
 })
 
 router.beforeEach(async (to) => {
+  if (to.meta.requiresAdmin) {
+    try {
+      await api.get('/api/admin/me')
+    } catch {
+      try {
+        await api.get('/api/users/me')
+        return { path: '/profile/' }
+      } catch {
+        return { path: '/login/', query: { redirect: to.fullPath } }
+      }
+    }
+  }
   if (to.meta.requiresAuth) {
     try {
       await api.get('/api/users/me')

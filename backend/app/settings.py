@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     frontend_origin: str = "https://www.banxia.xin"
     session_ttl_hours: int = 168
     cookie_secure: bool = True
+    # Comma-separated bootstrap administrator emails; never expose this value to clients.
+    admin_emails: str = ""
 
     @property
     def sqlalchemy_database_url(self) -> str:
