@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     # Comma-separated bootstrap administrator emails; never expose this value to clients.
     admin_emails: str = ""
+    media_public_origin: str = "https://api.banxia.xin"
 
     @property
     def sqlalchemy_database_url(self) -> str:
