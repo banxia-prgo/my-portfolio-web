@@ -204,3 +204,15 @@ body.bx-lightbox-open { overflow: hidden; }
   .toc nav { max-height: min(42vh, 360px); overflow-y: auto; overscroll-behavior: contain; }
   .toc-resize-handle { display: none; }
 }
+
+
+/* Unified typography: keep the same sans-serif family across every page. */
+body *:not(code):not(pre):not(kbd):not(samp) {
+  font-family: var(--font-sans) !important;
+}
+body code,
+body pre,
+body kbd,
+body samp {
+  font-family: "Cascadia Code", "Consolas", monospace !important;
+}
