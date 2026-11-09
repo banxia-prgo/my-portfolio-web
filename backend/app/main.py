@@ -747,7 +747,9 @@ def admin_bulk_update_content(
     require_csrf(request, x_csrf_token)
     actor = require_admin(request, db)
     changes = data.model_dump(exclude_unset=True, exclude={"ids"})
-    if not changes:
+    category_ids = changes.pop("category_ids", None)
+    tag_ids = changes.pop("tag_ids", None)
+    if not changes and category_ids is None and tag_ids is None:
         raise HTTPException(status_code=422, detail="至少选择一个需要批量修改的字段")
     items = db.scalars(select(ContentItem).where(ContentItem.id.in_(data.ids))).all()
     if len(items) != len(data.ids):
@@ -756,11 +758,22 @@ def admin_bulk_update_content(
     for item in items:
         for key, value in changes.items():
             setattr(item, key, value)
+        if category_ids is not None or tag_ids is not None:
+            apply_taxonomy(
+                db, item,
+                category_ids if category_ids is not None else [category.id for category in item.categories],
+                tag_ids if tag_ids is not None else [tag.id for tag in item.tags],
+            )
         if item.status == "published" and item.published_at is None:
             item.published_at = now
         item.updated_by = actor.id
+    fields = list(changes)
+    if category_ids is not None:
+        fields.append("category_ids")
+    if tag_ids is not None:
+        fields.append("tag_ids")
     write_audit_log(db, actor, "content.bulk_update", "content", None,
-                    f"ids={','.join(map(str, data.ids))}; fields={','.join(changes.keys())}")
+                    f"ids={','.join(map(str, data.ids))}; fields={','.join(fields)}")
     db.commit()
     return {"ok": True, "updated": len(items)}
 
