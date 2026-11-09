@@ -214,7 +214,7 @@ async function submit() {
   <article v-if="entry" :class="['post-single', { 'post-has-toc': kind === 'post' && headings.length > 2 }, kind === 'project' ? 'project-detail' : '']">
     <nav class="post-breadcrumb" aria-label="面包屑">
       <RouterLink to="/">首页</RouterLink><span>/</span>
-      <RouterLink :to="kind === 'project' ? '/projects/' : '/posts/'">{{ kind === 'project' ? '项目' : '随笔' }}</RouterLink><span>/</span>
+      <RouterLink :to="kind === 'project' ? '/projects/' : '/posts/'">{{ kind === 'project' ? '项目' : '文章' }}</RouterLink><span>/</span>
       <span>{{ entry.title }}</span>
     </nav>
 
