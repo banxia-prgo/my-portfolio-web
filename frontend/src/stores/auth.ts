@@ -8,6 +8,7 @@ export interface AuthUser {
   nickname: string
   avatar_url: string | null
   created_at: string
+  role: 'user' | 'admin'
 }
 
 export const useAuthStore = defineStore('auth', () => {
