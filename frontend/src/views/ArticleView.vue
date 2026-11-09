@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
-import { invalidateCatalog, loadCatalog, type ArticleContent } from '@/api/content'
+import { loadCatalog, type ArticleContent } from '@/api/content'
 import { api } from '@/api/client'
 
 const route = useRoute()
