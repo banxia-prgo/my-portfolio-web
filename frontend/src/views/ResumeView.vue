@@ -26,7 +26,7 @@ onMounted(async () => {
     </header>
     <div class="resume-intro">
       <span class="resume-avatar">半</span>
-      <div><h2>半夏</h2><p>代码与思绪的栖居之所</p><a href="https://github.com/banxia-prgo" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
+      <div><h2>半夏</h2><p>代码与思绪的栖居之所</p><a href="https://github.com/banxia-prgo" target="_blank" rel="noopener noreferrer">GitHub ↗</a><span class="resume-contact">联系方式：<a href="mailto:dhq1015@gmail.com">dhq1015@gmail.com</a></span></div>
     </div>
     <section class="post-content resume-content">
       <section v-for="(section, index) in sections" :key="index" class="resume-section">
