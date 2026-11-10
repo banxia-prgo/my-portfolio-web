@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu, X, ArrowUpRight, UserRound } from 'lucide-vue-next'
+import { Menu, X, ArrowUpRight, UserRound, Leaf } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -21,8 +21,8 @@ const links = [
     <div class="header-inner nav">
       <div class="logo">
         <RouterLink to="/" class="brand" @click="open = false">
-          <img src="/favicon.svg" alt="" class="brand-symbol">
-          <span>半夏小筑</span>
+          <Leaf class="brand-symbol" :size="23" :stroke-width="1.7" aria-hidden="true" />
+          <span class="brand-wordmark">半夏小筑</span>
         </RouterLink>
       </div>
       <nav id="menu" class="desktop-nav" aria-label="主导航">
