@@ -266,3 +266,13 @@ body .post-content h1,body .markdown-body h1 { font-family:var(--bx-font-ui)!imp
 @media (max-width:720px) {
   .bx-home-hero { background-size:auto 100%; }
 }
+
+/* Brush-style Chinese display typography mirrors the four-character homepage masthead */
+.bx-section__head h2,.bx-about-card__heading h2,.bx-project-card__body h3 {
+  font-family:var(--bx-font-display)!important;
+  font-weight:400!important;
+  letter-spacing:.045em;
+}
+.bx-section__head h2 { font-size:17px; }
+.bx-about-card__heading h2 { font-size:18px; }
+.bx-project-card__body h3 { font-size:15px; }
