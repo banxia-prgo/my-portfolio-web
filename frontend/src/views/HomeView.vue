@@ -70,7 +70,10 @@ onMounted(async () => {
         <div class="bx-project-grid">
           <article class="bx-project-card">
             <RouterLink class="bx-project-card__visual" :to="featuredProject?.href || '/projects/'">
-              <img src="/images/home-hero-landscape.svg" alt="图片浏览器项目预览" class="bx-project-card__image bx-project-card__image--gallery">
+              <div class="bx-browser-mock" aria-label="图片浏览器界面预览">
+                <div class="bx-browser-mock__bar"><i></i><i></i><i></i><span>图片浏览器</span></div>
+                <div class="bx-browser-mock__body"><div class="bx-browser-mock__side"></div><div class="bx-browser-mock__tiles"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bx-browser-mock__preview"></div></div>
+              </div>
               <span class="bx-project-card__visual-label">BANXIA / IMAGE BROWSER</span>
             </RouterLink>
             <div class="bx-project-card__body">
