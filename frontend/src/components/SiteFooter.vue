@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { Leaf } from 'lucide-vue-next'
 </script>
 <template>
   <footer class="footer bx-site-footer">
@@ -12,7 +13,10 @@ import { RouterLink } from 'vue-router'
         <RouterLink to="/about/">关于我</RouterLink>
       </nav>
       <RouterLink to="/" class="bx-footer-brand">
-        <span><img src="/favicon.svg" alt="">半夏小筑</span>
+        <span class="bx-footer-brand__wordmark">
+          <Leaf class="bx-footer-brand__leaf" :size="22" :stroke-width="1.7" aria-hidden="true" />
+          <strong>半夏小筑</strong>
+        </span>
         <small>代码与思绪的栖居之所</small>
       </RouterLink>
       <div class="bx-footer-meta">
