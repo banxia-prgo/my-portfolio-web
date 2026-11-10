@@ -1,3 +1,6 @@
+<script setup lang="ts">
+import { RouterLink } from 'vue-router'
+</script>
 <template>
   <footer class="footer bx-site-footer">
     <div class="footer-inner bx-footer-inner">
