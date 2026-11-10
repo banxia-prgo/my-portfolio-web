@@ -7,6 +7,7 @@ import router from './router'
 import './styles/main.css'
 import './styles/original-site.css'
 import './styles/vue-compat.css'
+import './styles/typography-polish.css'
+import './styles/homepage-refresh.css'
 
 createApp(App).use(createPinia()).use(router).use(ElementPlus).mount('#app')
-import './styles/typography-polish.css'
