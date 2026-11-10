@@ -243,3 +243,17 @@ body .post-content h1,body .markdown-body h1 { font-family:var(--bx-font-ui)!imp
   .bx-home-hero__copy,.bx-home-hero__poem { animation:none!important; }
   .bx-project-card,.bx-pill,.bx-note,.bx-about-card,.bx-learning-card,.bx-stats-card,.bx-btn { transition:none!important; }
 }
+
+/* Fine details for the miniature application screenshot in the featured project card */
+.bx-browser-mock { position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden; background:#f8f9fd; box-shadow:inset 0 0 0 1px rgba(42,53,102,.12); }
+.bx-browser-mock__bar { display:flex; flex:0 0 13px; align-items:center; gap:3px; padding:0 6px; color:#fff; background:linear-gradient(90deg,#4546a5,#7776d9); font:500 6px/1 var(--bx-font-ui); }
+.bx-browser-mock__bar i { width:4px; height:4px; border-radius:50%; background:#f4d9e3; }
+.bx-browser-mock__bar span { margin-left:5px; opacity:.92; }
+.bx-browser-mock__body { display:grid; flex:1; grid-template-columns:13% 48% 1fr; gap:5px; padding:6px; }
+.bx-browser-mock__side { border-radius:2px; background:repeating-linear-gradient(180deg,#d8dced 0 2px,transparent 2px 8px),#eef0f8; }
+.bx-browser-mock__tiles { display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:4px; }
+.bx-browser-mock__tiles i { border:1px solid #dfe3f0; border-radius:2px; background:linear-gradient(140deg,#dce8f4 0 40%,#b5c6d9 41% 55%,#e7e7f4 56%); }
+.bx-browser-mock__tiles i:nth-child(2n) { background:linear-gradient(145deg,#e6dff1,#a8c3d0 55%,#e8edf4 56%); }
+.bx-browser-mock__tiles i:nth-child(3n) { background:linear-gradient(145deg,#e7e7f3,#8299b7 54%,#d6e4ec 55%); }
+.bx-browser-mock__preview { border:2px solid #fff; border-radius:3px; background:linear-gradient(180deg,rgba(239,241,255,.1),rgba(34,49,71,.18)),url("/images/home-hero-landscape.svg") center/cover; box-shadow:0 1px 4px rgba(40,54,85,.14); }
+.bx-project-card:hover .bx-browser-mock { transform:translateY(-2px) scale(1.02); }
