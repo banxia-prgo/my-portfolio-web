@@ -20,29 +20,21 @@ const links = [
   <header class="header site-header">
     <div class="header-inner nav">
       <div class="logo">
-        <RouterLink to="/" class="brand" @click="open = false">半夏小筑</RouterLink>
+        <RouterLink to="/" class="brand" @click="open = false">
+          <img src="/favicon.svg" alt="" class="brand-symbol">
+          <span>半夏小筑</span>
+        </RouterLink>
       </div>
       <nav id="menu" class="desktop-nav" aria-label="主导航">
-        <RouterLink
-          v-for="link in links"
-          :key="link.to"
-          :to="link.to"
-          :class="{ active: route.path === link.to || (link.to !== '/' && route.path.startsWith(link.to)) }"
-        >{{ link.label }}</RouterLink>
+        <RouterLink v-for="link in links" :key="link.to" :to="link.to"
+          :class="{ active: route.path === link.to || (link.to !== '/' && route.path.startsWith(link.to)) }">{{ link.label }}</RouterLink>
       </nav>
       <div class="header-actions">
         <RouterLink v-if="auth.user?.role === 'admin'" class="login-link" to="/admin/">管理后台</RouterLink>
-        <RouterLink v-if="auth.user" class="login-link" to="/profile/" :aria-label="`个人中心：${auth.user.nickname}`">
-          <UserRound :size="15" /> {{ auth.user.nickname }}
-        </RouterLink>
-        <RouterLink v-else-if="auth.initialized" class="login-link" to="/login/">
-          登录 <ArrowUpRight :size="15" />
-        </RouterLink>
+        <RouterLink v-if="auth.user" class="login-link" to="/profile/" :aria-label="`个人中心：${auth.user.nickname}`"><UserRound :size="14"/> {{ auth.user.nickname }}</RouterLink>
+        <RouterLink v-else-if="auth.initialized" class="login-link" to="/login/">登录 <ArrowUpRight :size="14"/></RouterLink>
         <span v-else class="login-link" aria-label="正在恢复登录状态" aria-live="polite">…</span>
-        <button class="mobile-menu" :aria-label="open ? '关闭菜单' : '打开菜单'" @click="open = !open">
-          <X v-if="open" :size="21" />
-          <Menu v-else :size="21" />
-        </button>
+        <button class="mobile-menu" :aria-label="open ? '关闭菜单' : '打开菜单'" @click="open = !open"><X v-if="open" :size="20"/><Menu v-else :size="20"/></button>
       </div>
     </div>
     <nav v-if="open" class="mobile-nav" aria-label="移动端导航">
