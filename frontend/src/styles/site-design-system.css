@@ -276,3 +276,117 @@ body .post-content h1,body .markdown-body h1 { font-family:var(--bx-font-ui)!imp
 .bx-section__head h2 { font-size:17px; }
 .bx-about-card__heading h2 { font-size:18px; }
 .bx-project-card__body h3 { font-size:15px; }
+
+
+/* ===== Reference-fidelity correction pass (desktop proportions + legibility) ===== */
+:root {
+  --bx-content-width: min(1600px, calc(100% - clamp(96px, 12.5vw, 240px)));
+}
+.header-inner,
+.site-main.main,
+.bx-home-hero__inner,
+.bx-tech-strip,
+.bx-footer-inner {
+  width: var(--bx-content-width) !important;
+}
+.site-main.main { max-width: none !important; }
+.bx-home-hero h1 {
+  font-family: "Ma Shan Zheng","STKaiti","KaiTi","Kaiti SC",serif !important;
+  font-size: 56px !important;
+  font-weight: 400 !important;
+  letter-spacing: .10em !important;
+  line-height: 1.2 !important;
+}
+.bx-home-hero__subtitle { font-size: 18px !important; }
+.bx-home-hero__desc { font-size: 14px !important; line-height: 1.85 !important; }
+.bx-btn { font-size: 13px !important; }
+.bx-section__head h2 { font-size: 18px !important; }
+.bx-project-card__body h3 { font-size: 15px !important; }
+.bx-project-card__body>p { font-size: 12px !important; line-height: 1.75 !important; min-height: 42px; }
+.bx-project-tags span { font-size: 10px !important; }
+.bx-project-card__foot { font-size: 11px !important; }
+.bx-about-card__heading h2 { font-size: 18px !important; }
+.bx-about-card__heading p { font-size: 11px !important; }
+.bx-about-card__intro { font-size: 12px !important; }
+.bx-about-item strong { font-size: 12px !important; }
+.bx-about-item p { font-size: 11px !important; }
+.bx-about-link { font-size: 12px !important; }
+.bx-note__content strong { font-size: 12.5px !important; }
+.bx-note__content>span { font-size: 11px !important; }
+.bx-note__content small { font-size: 10px !important; }
+.bx-learning-step strong { font-size: 12px !important; }
+.bx-learning-step p { font-size: 10.5px !important; }
+.bx-stats-grid strong { font-size: 14px !important; }
+.bx-stats-grid span { font-size: 10px !important; }
+
+/* The legal line is intentionally readable and remains on one line at desktop sizes. */
+.bx-footer-meta {
+  align-items: center;
+  flex-wrap: nowrap !important;
+  gap: 0 9px !important;
+  color: #68799d !important;
+  font-size: 12px !important;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.bx-footer-meta span,
+.bx-footer-meta a { font-size: 12px !important; }
+.bx-footer-meta a { font-weight: 700 !important; color: #655fc4 !important; }
+
+/* Clear, layered watercolor waves at the top of the footer. */
+.bx-site-footer {
+  min-height: 94px;
+  margin-top: 10px !important;
+  padding: 34px 0 19px !important;
+  background: linear-gradient(180deg,#f5f4ff 0%,#efedff 100%) !important;
+  isolation: isolate;
+}
+.bx-site-footer::before,
+.bx-site-footer::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  content: "";
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 100% 100%;
+}
+.bx-site-footer::before {
+  z-index: -1;
+  top: 0;
+  height: 43px;
+  opacity: .98;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 30 C145 2 235 54 390 34 S650 5 790 30 S1040 56 1180 28 S1340 8 1440 25 L1440 70 L0 70Z' fill='%23e4e2ff'/%3E%3C/svg%3E");
+}
+.bx-site-footer::after {
+  z-index: -1;
+  top: 5px;
+  height: 36px;
+  opacity: .96;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 70' preserveAspectRatio='none'%3E%3Cpath d='M0 36 C170 60 270 5 440 27 S700 60 860 31 S1110 5 1260 29 S1380 43 1440 26 L1440 70 L0 70Z' fill='%23f5f4ff'/%3E%3C/svg%3E");
+}
+.bx-footer-inner { grid-template-columns:1fr 1fr 1.25fr !important; }
+.bx-footer-nav a { font-size: 12px !important; }
+.bx-footer-brand>span { font-size: 19px !important; }
+.bx-footer-brand small { font-size: 11px !important; }
+
+@media (max-width: 720px) {
+  .header-inner,
+  .site-main.main,
+  .bx-home-hero__inner,
+  .bx-tech-strip,
+  .bx-footer-inner {
+    width: calc(100% - 30px) !important;
+  }
+  .bx-home-hero h1 { font-size: 47px !important; }
+  .bx-footer-meta {
+    flex-wrap: wrap !important;
+    justify-content: center;
+    white-space: normal;
+    font-size: 11px !important;
+  }
+  .bx-footer-meta span,
+  .bx-footer-meta a { font-size: 11px !important; }
+  .bx-footer-inner { grid-template-columns:1fr !important; }
+}
