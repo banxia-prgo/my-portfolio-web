@@ -36,7 +36,7 @@ body .page-title, body .auth-title, body .profile-title {
 .home-page { width:100%; max-width:none; }
 
 /* Hero: 308px landscape banner, left text block and handwritten quote */
-.bx-home-hero { position:relative; width:100vw; min-height:308px; margin:0 calc(50% - 50vw); overflow:hidden; background:#eff3ff url("/images/home-hero-landscape.svg") center right/cover no-repeat; isolation:isolate; }
+.bx-home-hero { position:relative; width:100vw; min-height:308px; margin:0 calc(50% - 50vw); overflow:hidden; background:#eff3ff url("/images/home-hero-reference.webp") right center/auto 100% no-repeat; isolation:isolate; }
 .bx-home-hero::before { position:absolute; z-index:-1; inset:0; content:""; background:linear-gradient(90deg,rgba(245,246,255,.99) 0%,rgba(245,246,255,.97) 27%,rgba(245,246,255,.82) 39%,rgba(245,246,255,.12) 64%,rgba(255,255,255,0) 100%); }
 .bx-home-hero::after { position:absolute; z-index:-1; right:0; bottom:0; left:0; height:36px; content:""; background:linear-gradient(0deg,rgba(224,235,252,.2),transparent); }
 .bx-home-hero__inner { position:relative; display:flex; align-items:flex-start; width:min(1136px,calc(100% - 48px)); min-height:308px; margin:0 auto; padding:26px 0 24px; }
@@ -257,3 +257,12 @@ body .post-content h1,body .markdown-body h1 { font-family:var(--bx-font-ui)!imp
 .bx-browser-mock__tiles i:nth-child(3n) { background:linear-gradient(145deg,#e7e7f3,#8299b7 54%,#d6e4ec 55%); }
 .bx-browser-mock__preview { border:2px solid #fff; border-radius:3px; background:linear-gradient(180deg,rgba(239,241,255,.1),rgba(34,49,71,.18)),url("/images/home-hero-landscape.svg") center/cover; box-shadow:0 1px 4px rgba(40,54,85,.14); }
 .bx-project-card:hover .bx-browser-mock { transform:translateY(-2px) scale(1.02); }
+
+/* Raster artwork taken from the approved prototype */
+.bx-project-card__visual--vision img,.bx-project-card__visual--learning img { display:block; width:100%; height:100%; object-fit:cover; }
+.bx-note__thumb img { display:block; width:100%; height:100%; object-fit:cover; }
+.bx-note__thumb::before { display:none; }
+.bx-home-hero { background-size:auto 100%; }
+@media (max-width:720px) {
+  .bx-home-hero { background-size:auto 100%; }
+}
