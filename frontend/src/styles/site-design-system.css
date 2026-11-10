@@ -430,3 +430,11 @@ body .bx-site-footer .bx-footer-brand__leaf {
   body .site-header .logo .brand .brand-wordmark { font-size: 23px !important; }
   body .bx-site-footer .bx-footer-brand .bx-footer-brand__wordmark strong { font-size: 22px !important; }
 }
+
+
+/* Remove the thin horizontal separator above the footer without affecting its wave artwork. */
+.bx-site-footer {
+  border-top: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
