@@ -1,34 +1,22 @@
 <template>
-  <footer class="footer">
-    <div class="footer-inner">
-      <div>
-        <span class="footer-mark">半夏小筑</span>
-        <p>代码与思绪的栖居之所</p>
-      </div>
-      <div class="footer-meta">
-        <span>© {{ new Date().getFullYear() }} Banxia</span>
+  <footer class="footer bx-site-footer">
+    <div class="footer-inner bx-footer-inner">
+      <nav class="bx-footer-nav" aria-label="页脚导航">
+        <RouterLink to="/">首页</RouterLink>
+        <RouterLink to="/posts/">文章</RouterLink>
+        <RouterLink to="/projects/">项目</RouterLink>
+        <RouterLink to="/guestbook/">留言</RouterLink>
+        <RouterLink to="/about/">关于我</RouterLink>
+      </nav>
+      <RouterLink to="/" class="bx-footer-brand">
+        <span><img src="/favicon.svg" alt="">半夏小筑</span>
+        <small>代码与思绪的栖居之所</small>
+      </RouterLink>
+      <div class="bx-footer-meta">
+        <span>© 2026 Banxia</span>
         <span>Built with curiosity &amp; care</span>
-        <a
-          class="filing-link"
-          href="https://beian.miit.gov.cn/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >陕ICP备2026032591号-1</a>
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">陕ICP备2026032591号-1</a>
       </div>
     </div>
   </footer>
 </template>
-
-<style scoped>
-.filing-link {
-  color: inherit;
-  font-size: 0.8rem;
-  opacity: 0.72;
-  text-decoration: none;
-  transition: opacity 0.2s ease;
-}
-
-.filing-link:hover {
-  opacity: 1;
-}
-</style>
