@@ -39,7 +39,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-后端环境变量参考 `backend/.env.example`。不要将真实密钥或生产环境配置提交到 Git。
+后端环境变量参考 `backend/.env.example`。
 
 ## 生产部署
 
@@ -52,9 +52,3 @@ uvicorn app.main:app --reload
 
 网站文章、项目、简历及互动功能由当前 Vue 前端和 FastAPI 服务提供。后台内容管理支持内容维护、图片管理及留言审核。生产数据和上传文件保存在服务器端。
 
-## 重要约定
-
-- 不要把数据库端口直接暴露到公网。
-- 不要覆盖服务器上的生产 `.env` 文件。
-- 数据库迁移和生产数据操作必须先备份并审查。
-- 阿里云部署工作流、Nginx 配置及后端服务配置属于当前生产架构的一部分，不要随意删除。
