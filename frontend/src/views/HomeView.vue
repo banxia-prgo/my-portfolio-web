@@ -70,10 +70,7 @@ onMounted(async () => {
         <div class="bx-project-grid">
           <article class="bx-project-card">
             <RouterLink class="bx-project-card__visual" :to="featuredProject?.href || '/projects/'">
-              <div class="bx-browser-mock" aria-label="图片浏览器界面预览">
-                <div class="bx-browser-mock__bar"><i></i><i></i><i></i><span>图片浏览器</span></div>
-                <div class="bx-browser-mock__body"><div class="bx-browser-mock__side"></div><div class="bx-browser-mock__tiles"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="bx-browser-mock__preview"></div></div>
-              </div>
+              <img src="/images/project-gallery.webp" alt="图片浏览器界面预览">
               <span class="bx-project-card__visual-label">BANXIA / IMAGE BROWSER</span>
             </RouterLink>
             <div class="bx-project-card__body">
@@ -89,7 +86,7 @@ onMounted(async () => {
 
           <article class="bx-project-card">
             <RouterLink class="bx-project-card__visual bx-project-card__visual--vision" to="/about/">
-              <div class="bx-vision-photo"><span class="bx-detection-box bx-detection-box--one"></span><span class="bx-detection-box bx-detection-box--two"></span><span class="bx-detection-box bx-detection-box--three"></span><small>OBJECT DETECTION / 01</small></div>
+              <img src="/images/project-vision.webp" alt="机器视觉目标检测项目预览">
             </RouterLink>
             <div class="bx-project-card__body">
               <h3><RouterLink to="/about/">机器视觉项目</RouterLink></h3>
@@ -101,7 +98,7 @@ onMounted(async () => {
 
           <article class="bx-project-card">
             <RouterLink class="bx-project-card__visual bx-project-card__visual--learning" to="/posts/">
-              <div class="bx-neural-photo"><span class="bx-neural-photo__glow"></span><small>DEEP LEARNING / 02</small></div>
+              <img src="/images/project-ai.webp" alt="深度学习项目预览">
             </RouterLink>
             <div class="bx-project-card__body">
               <h3><RouterLink to="/posts/">深度学习项目</RouterLink></h3>
@@ -129,7 +126,7 @@ onMounted(async () => {
         </div>
         <div class="bx-note-list">
           <RouterLink v-for="(post, index) in posts" :key="post.slug" class="bx-note" :to="post.href">
-            <span class="bx-note__thumb" :class="post.slug.includes('linux') ? 'bx-note__thumb--mountain' : 'bx-note__thumb--code'"><span>{{ index + 1 }}</span></span>
+            <span class="bx-note__thumb"><img :src="post.slug.includes('linux') ? '/images/post-linux.webp' : '/images/post-cpp.webp'" :alt="post.title"><span>{{ index + 1 }}</span></span>
             <span class="bx-note__content">
               <strong>{{ post.title }}</strong>
               <span>{{ post.summary }}</span>
