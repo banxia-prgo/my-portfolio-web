@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowRight, BarChart3, BookOpen, Code2, ExternalLink, GraduationCap, Mail, NotebookPen, Sparkles, Target } from 'lucide-vue-next'
+import { ArrowRight, BarChart3, BookOpen, Code2, GraduationCap, Mail, NotebookPen, Sparkles, Target } from 'lucide-vue-next'
 import { loadCatalog, type ArticleContent } from '@/api/content'
 
 const projects = ref<ArticleContent[]>([])
