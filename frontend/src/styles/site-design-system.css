@@ -390,3 +390,43 @@ body .post-content h1,body .markdown-body h1 { font-family:var(--bx-font-ui)!imp
   .bx-footer-meta a { font-size: 11px !important; }
   .bx-footer-inner { grid-template-columns:1fr !important; }
 }
+
+
+/* Header and footer brand lockup: same brush typeface as the homepage masthead. */
+body .site-header .logo .brand .brand-wordmark,
+body .bx-site-footer .bx-footer-brand .bx-footer-brand__wordmark strong {
+  display: inline-block;
+  color: #172b4d;
+  font-family: "Ma Shan Zheng","STKaiti","KaiTi","Kaiti SC","Noto Serif CJK SC",serif !important;
+  font-size: 25px !important;
+  font-weight: 400 !important;
+  letter-spacing: .10em !important;
+  line-height: 1.15;
+}
+body .site-header .logo .brand {
+  gap: 8px;
+}
+body .site-header .logo .brand .brand-symbol {
+  display: block;
+  flex: 0 0 auto;
+  width: 23px;
+  height: 23px;
+  color: #7b72d9;
+}
+body .bx-site-footer .bx-footer-brand__wordmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+body .bx-site-footer .bx-footer-brand__wordmark strong {
+  font-size: 23px !important;
+}
+body .bx-site-footer .bx-footer-brand__leaf {
+  flex: 0 0 auto;
+  color: #7b72d9;
+}
+@media (max-width: 720px) {
+  body .site-header .logo .brand .brand-wordmark { font-size: 23px !important; }
+  body .bx-site-footer .bx-footer-brand .bx-footer-brand__wordmark strong { font-size: 22px !important; }
+}
