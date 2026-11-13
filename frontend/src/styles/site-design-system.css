@@ -438,3 +438,46 @@ body .bx-site-footer .bx-footer-brand__leaf {
   box-shadow: none !important;
   outline: 0 !important;
 }
+
+
+/* Keep copyright and statutory filing links balanced in the footer. */
+.bx-footer-meta {
+  display: grid !important;
+  justify-items: end;
+  gap: 3px !important;
+  white-space: normal !important;
+}
+.bx-footer-meta__copyright,
+.bx-footer-meta__filings {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+}
+.bx-footer-meta__copyright {
+  color: #7d8ba7;
+  font-size: 11px;
+}
+.bx-footer-meta__filings a {
+  color: #655fc4;
+  font-size: 11px !important;
+  font-weight: 700;
+  line-height: 1.6;
+  text-decoration: none;
+}
+.bx-footer-meta__filings a + a {
+  padding-left: 10px;
+  border-left: 1px solid rgba(125, 132, 177, .35);
+}
+.bx-footer-meta__filings a:hover { text-decoration: underline; }
+@media (max-width: 720px) {
+  .bx-footer-meta {
+    justify-items: center;
+    gap: 5px !important;
+  }
+  .bx-footer-meta__copyright,
+  .bx-footer-meta__filings {
+    justify-content: center;
+  }
+}

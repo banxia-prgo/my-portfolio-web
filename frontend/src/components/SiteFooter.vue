@@ -20,9 +20,14 @@ import { Leaf } from 'lucide-vue-next'
         <small>代码与思绪的栖居之所</small>
       </RouterLink>
       <div class="bx-footer-meta">
-        <span>© 2026 Banxia</span>
-        <span>Built with curiosity &amp; care</span>
-        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">陕ICP备2026032591号-1</a>
+        <div class="bx-footer-meta__copyright">
+          <span>© 2026 Banxia</span>
+          <span>Built with curiosity &amp; care</span>
+        </div>
+        <div class="bx-footer-meta__filings" aria-label="网站备案信息">
+          <a href="https://beian.mps.gov.cn/#/query/webSearch?code=61019002004464" target="_blank" rel="noopener noreferrer">陕公网安备61019002004464号</a>
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">陕ICP备2026032591号-1</a>
+        </div>
       </div>
     </div>
   </footer>
