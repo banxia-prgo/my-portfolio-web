@@ -510,3 +510,26 @@ body .bx-site-footer .bx-footer-brand__leaf {
     text-align: center;
   }
 }
+
+
+/* Footer typography refinement: clearer legal details with balanced visual weight. */
+.bx-footer-meta__filings a {
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1.7 !important;
+  letter-spacing: .015em;
+}
+.bx-footer-meta__copyright {
+  font-size: 12.5px !important;
+  font-weight: 500;
+  line-height: 1.7;
+  letter-spacing: .01em;
+}
+@media (max-width: 720px) {
+  .bx-footer-meta__filings a {
+    font-size: 12px !important;
+  }
+  .bx-footer-meta__copyright {
+    font-size: 12px !important;
+  }
+}

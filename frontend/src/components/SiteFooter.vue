@@ -14,7 +14,6 @@ import { Leaf } from 'lucide-vue-next'
           <Leaf class="bx-footer-brand__leaf" :size="22" :stroke-width="1.7" aria-hidden="true" />
           <strong>半夏小筑</strong>
         </span>
-        <small>代码与思绪的栖居之所</small>
       </RouterLink>
       <div class="bx-footer-meta__copyright">
         <span>© 2026 Banxia</span>
