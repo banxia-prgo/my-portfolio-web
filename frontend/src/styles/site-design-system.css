@@ -481,3 +481,32 @@ body .bx-site-footer .bx-footer-brand__leaf {
     justify-content: center;
   }
 }
+
+/* Footer: filing links left, brand centered, copyright on the right; no secondary navigation. */
+.bx-footer-inner {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+}
+.bx-footer-meta__filings {
+  justify-content: flex-start !important;
+  justify-self: start;
+}
+.bx-footer-meta__copyright {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  justify-self: end;
+  gap: 3px 10px;
+  color: #7d8ba7;
+  font-size: 11px;
+  text-align: right;
+}
+@media (max-width: 720px) {
+  .bx-footer-inner { grid-template-columns: 1fr !important; }
+  .bx-footer-meta__filings,
+  .bx-footer-meta__copyright {
+    justify-self: center;
+    justify-content: center !important;
+    text-align: center;
+  }
+}
